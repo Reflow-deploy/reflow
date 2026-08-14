@@ -1,0 +1,277 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1190" viewBox="0 0 1440 1190" font-family="Calibri, 'Segoe UI', Arial, sans-serif">
+
+  <defs>
+    <!-- ============ ÍCONES ============ -->
+
+    <symbol id="pc" viewBox="0 0 100 84">
+      <rect x="72" y="2" width="25" height="60" rx="2" fill="#4a90d2" stroke="#2e6da4" stroke-width="1.4"/>
+      <rect x="77" y="8" width="15" height="2.6" fill="#dceaf7"/>
+      <rect x="77" y="14" width="15" height="2.6" fill="#dceaf7"/>
+      <circle cx="84.5" cy="24" r="2.4" fill="#dceaf7"/>
+      <rect x="2" y="6" width="68" height="50" rx="3" fill="#4a90d2" stroke="#2e6da4" stroke-width="1.4"/>
+      <rect x="7" y="11" width="58" height="37" fill="#a6a6a6"/>
+      <rect x="5" y="62" width="62" height="11" rx="2" fill="#4a90d2" stroke="#2e6da4" stroke-width="1.4"/>
+      <g fill="#dceaf7">
+        <rect x="9" y="65" width="6" height="2"/><rect x="17" y="65" width="6" height="2"/>
+        <rect x="25" y="65" width="6" height="2"/><rect x="33" y="65" width="6" height="2"/>
+        <rect x="41" y="65" width="6" height="2"/><rect x="49" y="65" width="6" height="2"/>
+        <rect x="57" y="65" width="6" height="2"/>
+        <rect x="13" y="69" width="46" height="2"/>
+      </g>
+    </symbol>
+
+    <symbol id="laptop" viewBox="0 0 100 72">
+      <rect x="14" y="2" width="72" height="48" rx="3" fill="#4a90d2" stroke="#2e6da4" stroke-width="1.4"/>
+      <rect x="19" y="7" width="62" height="36" fill="#a6a6a6"/>
+      <path d="M8 52 H92 L100 66 H0 Z" fill="#5ba0dd" stroke="#2e6da4" stroke-width="1.4"/>
+      <rect x="34" y="57" width="32" height="3" rx="1.5" fill="#2e6da4"/>
+    </symbol>
+
+    <symbol id="router" viewBox="0 0 112 48">
+      <rect x="2" y="4" width="108" height="32" rx="3" fill="#4a90d2" stroke="#2e6da4" stroke-width="1.4"/>
+      <g fill="#ffffff">
+        <circle cx="14" cy="13" r="2.6"/><circle cx="23" cy="13" r="2.6"/><circle cx="32" cy="13" r="2.6"/><circle cx="41" cy="13" r="2.6"/>
+        <circle cx="14" cy="22" r="2.6"/><circle cx="23" cy="22" r="2.6"/><circle cx="32" cy="22" r="2.6"/><circle cx="41" cy="22" r="2.6"/>
+      </g>
+      <rect x="72" y="9" width="32" height="22" rx="2" fill="#70ad47"/>
+      <g stroke="#ffffff" stroke-width="1.6" fill="none">
+        <path d="M78 14 L88 20 L78 26"/><path d="M98 14 L88 20 L98 26"/>
+      </g>
+      <rect x="10" y="36" width="92" height="5" rx="1" fill="#2e6da4"/>
+    </symbol>
+
+    <symbol id="switch" viewBox="0 0 130 42">
+      <rect x="2" y="4" width="126" height="26" rx="2.5" fill="#4a90d2" stroke="#2e6da4" stroke-width="1.4"/>
+      <g fill="#ffffff">
+        <circle cx="12" cy="11" r="2.3"/><circle cx="20" cy="11" r="2.3"/><circle cx="28" cy="11" r="2.3"/><circle cx="36" cy="11" r="2.3"/>
+        <circle cx="44" cy="11" r="2.3"/><circle cx="52" cy="11" r="2.3"/><circle cx="60" cy="11" r="2.3"/><circle cx="68" cy="11" r="2.3"/>
+        <circle cx="12" cy="21" r="2.3"/><circle cx="20" cy="21" r="2.3"/><circle cx="28" cy="21" r="2.3"/><circle cx="36" cy="21" r="2.3"/>
+        <circle cx="44" cy="21" r="2.3"/><circle cx="52" cy="21" r="2.3"/><circle cx="60" cy="21" r="2.3"/><circle cx="68" cy="21" r="2.3"/>
+      </g>
+      <rect x="92" y="8" width="30" height="18" rx="2" fill="#70ad47"/>
+      <g stroke="#ffffff" stroke-width="1.5" fill="none">
+        <path d="M97 12 L107 17 L97 22"/><path d="M117 12 L107 17 L117 22"/>
+      </g>
+      <rect x="10" y="30" width="110" height="5" rx="1" fill="#2e6da4"/>
+    </symbol>
+
+    <symbol id="switchmini" viewBox="0 0 100 38">
+      <rect x="2" y="4" width="96" height="22" rx="2.5" fill="#4a90d2" stroke="#2e6da4" stroke-width="1.4"/>
+      <g fill="#ffffff">
+        <circle cx="11" cy="10" r="2"/><circle cx="18" cy="10" r="2"/><circle cx="25" cy="10" r="2"/><circle cx="32" cy="10" r="2"/>
+        <circle cx="39" cy="10" r="2"/><circle cx="46" cy="10" r="2"/>
+        <circle cx="11" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><circle cx="25" cy="19" r="2"/><circle cx="32" cy="19" r="2"/>
+        <circle cx="39" cy="19" r="2"/><circle cx="46" cy="19" r="2"/>
+      </g>
+      <rect x="64" y="8" width="26" height="14" rx="2" fill="#70ad47"/>
+      <g stroke="#ffffff" stroke-width="1.4" fill="none">
+        <path d="M68 11 L76 15 L68 19"/><path d="M86 11 L76 15 L86 19"/>
+      </g>
+      <rect x="8" y="26" width="84" height="4" rx="1" fill="#2e6da4"/>
+    </symbol>
+
+    <symbol id="patch" viewBox="0 0 150 48">
+      <rect x="2" y="4" width="146" height="30" rx="2.5" fill="#4a90d2" stroke="#2e6da4" stroke-width="1.4"/>
+      <g fill="#ffffff">
+        <rect x="10" y="9" width="6" height="6"/><rect x="20" y="9" width="6" height="6"/><rect x="30" y="9" width="6" height="6"/>
+        <rect x="40" y="9" width="6" height="6"/><rect x="50" y="9" width="6" height="6"/><rect x="60" y="9" width="6" height="6"/>
+        <rect x="70" y="9" width="6" height="6"/><rect x="80" y="9" width="6" height="6"/>
+        <rect x="10" y="21" width="6" height="6"/><rect x="20" y="21" width="6" height="6"/><rect x="30" y="21" width="6" height="6"/>
+        <rect x="40" y="21" width="6" height="6"/><rect x="50" y="21" width="6" height="6"/><rect x="60" y="21" width="6" height="6"/>
+        <rect x="70" y="21" width="6" height="6"/><rect x="80" y="21" width="6" height="6"/>
+      </g>
+      <rect x="102" y="9" width="36" height="20" rx="2" fill="#70ad47"/>
+      <g stroke="#ffffff" stroke-width="1.6" fill="none">
+        <path d="M108 13 L120 19 L108 25"/><path d="M132 13 L120 19 L132 25"/>
+      </g>
+      <rect x="10" y="34" width="130" height="6" rx="1" fill="#2e6da4"/>
+    </symbol>
+
+    <symbol id="outlet" viewBox="0 0 64 40">
+      <path d="M6 12 H58 A4 4 0 0 1 62 16 V30 A4 4 0 0 1 58 34 H6 A4 4 0 0 1 2 30 V16 A4 4 0 0 1 6 12 Z"
+            fill="#4a90d2" stroke="#2e6da4" stroke-width="1.4"/>
+      <path d="M14 6 H50 A4 4 0 0 1 54 10 V12 H10 V10 A4 4 0 0 1 14 6 Z" fill="#5ba0dd" stroke="#2e6da4" stroke-width="1.2"/>
+      <line x1="10" y1="22" x2="54" y2="22" stroke="#2e6da4" stroke-width="1.4"/>
+    </symbol>
+
+    <symbol id="ap" viewBox="0 0 96 62">
+      <rect x="12" y="30" width="72" height="22" rx="8" fill="#4a90d2" stroke="#2e6da4" stroke-width="1.4"/>
+      <circle cx="48" cy="41" r="4" fill="#70ad47"/>
+      <g fill="none" stroke="#2e6da4" stroke-width="2.4" stroke-linecap="round">
+        <path d="M34 22 A18 18 0 0 1 62 22"/>
+        <path d="M27 13 A28 28 0 0 1 69 13"/>
+      </g>
+    </symbol>
+
+    <symbol id="cloud" viewBox="0 0 180 92">
+      <path d="M46 78 A24 24 0 0 1 44 31 A30 30 0 0 1 100 20 A26 26 0 0 1 140 40 A20 20 0 0 1 136 78 Z"
+            fill="#dceaf7" stroke="#2e6da4" stroke-width="2"/>
+    </symbol>
+
+    <symbol id="tablet" viewBox="0 0 62 84">
+      <rect x="2" y="2" width="58" height="80" rx="6" fill="#4a90d2" stroke="#2e6da4" stroke-width="1.4"/>
+      <rect x="8" y="10" width="46" height="60" fill="#a6a6a6"/>
+      <circle cx="31" cy="76" r="3" fill="#dceaf7"/>
+    </symbol>
+  </defs>
+
+  <rect width="1440" height="1190" fill="#ffffff"/>
+
+  <!-- ============ TÍTULO ============ -->
+  <text x="60" y="52" font-size="27" font-weight="700" fill="#1f4e79">ARQUITETURA DE REDE — SISTEMA REFLOW</text>
+  <text x="60" y="78" font-size="15" fill="#5c7b99">Escola Técnica · Rede local cabeada e sem fio integrada aos serviços em nuvem da aplicação</text>
+
+  <!-- Quadro de endereçamento (equivalente à nota de máscara do modelo) -->
+  <rect x="1064" y="24" width="336" height="86" rx="8" fill="#f2f7fd" stroke="#a8c6e5" stroke-width="1.5"/>
+  <text x="1232" y="48" font-size="14.5" font-weight="700" fill="#1f4e79" text-anchor="middle">Endereço de rede: 192.168.10.0/24</text>
+  <text x="1232" y="70" font-size="14.5" fill="#1f4e79" text-anchor="middle">Máscara de sub-rede: 255.255.255.0</text>
+  <text x="1232" y="92" font-size="14.5" fill="#1f4e79" text-anchor="middle">Gateway padrão: 192.168.10.1</text>
+
+  <!-- ============ FAIXA DE NUVEM ============ -->
+  <rect x="96" y="128" width="1248" height="118" rx="12" fill="#fbfdff" stroke="#a8c6e5" stroke-width="1.5" stroke-dasharray="8 5"/>
+  <text x="116" y="150" font-size="12.5" font-weight="700" fill="#5c7b99" letter-spacing="1">SERVIÇOS EM NUVEM — ACESSO EXCLUSIVO POR HTTPS (TLS, PORTA 443)</text>
+
+  <!-- Card 1: hospedagem -->
+  <rect x="136" y="162" width="316" height="66" rx="8" fill="#eaf2fb" stroke="#2e6da4" stroke-width="1.5"/>
+  <rect x="152" y="178" width="34" height="34" rx="4" fill="#4a90d2"/>
+  <g stroke="#ffffff" stroke-width="2" fill="none"><path d="M160 188 h18 M160 195 h18 M160 202 h11"/></g>
+  <text x="198" y="190" font-size="15" font-weight="700" fill="#1f4e79">Hospedagem da aplicação</text>
+  <text x="198" y="210" font-size="13" fill="#5c7b99">SPA React + Vite (build estático)</text>
+
+  <!-- Card 2: Supabase -->
+  <rect x="562" y="162" width="316" height="66" rx="8" fill="#eaf2fb" stroke="#2e6da4" stroke-width="1.5"/>
+  <rect x="578" y="178" width="34" height="34" rx="4" fill="#4a90d2"/>
+  <g stroke="#ffffff" stroke-width="1.8" fill="none">
+    <ellipse cx="595" cy="187" rx="12" ry="4.5"/><path d="M583 187 v12 a12 4.5 0 0 0 24 0 v-12"/>
+  </g>
+  <text x="624" y="190" font-size="15" font-weight="700" fill="#1f4e79">Supabase</text>
+  <text x="624" y="210" font-size="13" fill="#5c7b99">PostgreSQL + Auth (Google OAuth 2.0)</text>
+
+  <!-- Card 3: Gmail API -->
+  <rect x="988" y="162" width="316" height="66" rx="8" fill="#eaf2fb" stroke="#2e6da4" stroke-width="1.5"/>
+  <rect x="1004" y="178" width="34" height="34" rx="4" fill="#4a90d2"/>
+  <g stroke="#ffffff" stroke-width="1.8" fill="none"><rect x="1010" y="186" width="22" height="16" rx="2"/><path d="M1010 188 l11 8 l11 -8"/></g>
+  <text x="1050" y="190" font-size="15" font-weight="700" fill="#1f4e79">Google Gmail API</text>
+  <text x="1050" y="210" font-size="13" fill="#5c7b99">Alertas automáticos de ocorrências</text>
+
+  <!-- ============ LINHAS: NUVEM -> INTERNET ============ -->
+  <g stroke="#333333" stroke-width="1.6" fill="none">
+    <path d="M294 228 V262 H660 V292"/>
+    <path d="M720 228 V292"/>
+    <path d="M1146 228 V262 H780 V292"/>
+  </g>
+
+  <!-- ============ INTERNET ============ -->
+  <use href="#cloud" x="630" y="288" width="180" height="92"/>
+  <text x="720" y="342" font-size="16" font-weight="700" fill="#1f4e79" text-anchor="middle">INTERNET</text>
+
+  <!-- Internet -> Roteador -->
+  <line x1="720" y1="372" x2="720" y2="424" stroke="#333333" stroke-width="1.6"/>
+  <text x="732" y="402" font-size="12.5" fill="#5c7b99">Link do provedor · HTTPS 443</text>
+
+  <!-- ============ ROTEADOR ============ -->
+  <use href="#router" x="664" y="424" width="112" height="48"/>
+  <text x="720" y="492" font-size="14.5" font-weight="700" fill="#1f4e79" text-anchor="middle">Modem / Roteador (gateway + firewall)</text>
+  <text x="720" y="511" font-size="13.5" fill="#1f4e79" text-anchor="middle">WAN: IP público do provedor</text>
+  <text x="720" y="530" font-size="13.5" fill="#1f4e79" text-anchor="middle">LAN: 192.168.10.1</text>
+
+  <!-- Roteador -> Switch -->
+  <line x1="720" y1="540" x2="720" y2="574" stroke="#333333" stroke-width="1.6"/>
+
+  <!-- ============ SWITCH PRINCIPAL ============ -->
+  <use href="#switch" x="655" y="574" width="130" height="42"/>
+  <text x="720" y="636" font-size="14.5" font-weight="700" fill="#1f4e79" text-anchor="middle">Switch principal — 24 portas</text>
+  <text x="720" y="655" font-size="13.5" fill="#1f4e79" text-anchor="middle">192.168.10.2</text>
+
+  <!-- Switch -> Access Point -->
+  <path d="M785 592 H1286 V636" stroke="#333333" stroke-width="1.6" fill="none"/>
+  <text x="1010" y="585" font-size="12.5" fill="#5c7b99" text-anchor="middle">Cabo UTP Cat.6</text>
+
+  <!-- Switch -> Patch panel -->
+  <line x1="720" y1="664" x2="720" y2="700" stroke="#333333" stroke-width="1.6"/>
+
+  <!-- ============ PATCH PANEL ============ -->
+  <use href="#patch" x="645" y="700" width="150" height="48"/>
+  <text x="720" y="768" font-size="14.5" font-weight="700" fill="#1f4e79" text-anchor="middle">Patch panel — 24 portas</text>
+  <text x="720" y="787" font-size="13" fill="#5c7b99" text-anchor="middle">Distribuição do cabeamento estruturado</text>
+
+  <!-- Barramento de distribuição -->
+  <path d="M720 748 V812 M180 812 H1092 M180 812 V846 M400 812 V846 M620 812 V846 M840 812 V846 M1092 812 V846"
+        stroke="#333333" stroke-width="1.6" fill="none"/>
+
+  <!-- ============ TOMADAS ============ -->
+  <use href="#outlet" x="148" y="846" width="64" height="40"/>
+  <text x="180" y="902" font-size="13.5" fill="#1f4e79" text-anchor="middle">t1</text>
+  <use href="#outlet" x="368" y="846" width="64" height="40"/>
+  <text x="400" y="902" font-size="13.5" fill="#1f4e79" text-anchor="middle">t2</text>
+  <use href="#outlet" x="588" y="846" width="64" height="40"/>
+  <text x="620" y="902" font-size="13.5" fill="#1f4e79" text-anchor="middle">t3</text>
+  <use href="#outlet" x="808" y="846" width="64" height="40"/>
+  <text x="840" y="902" font-size="13.5" fill="#1f4e79" text-anchor="middle">t4</text>
+
+  <!-- Switch secundário do laboratório -->
+  <use href="#switchmini" x="1042" y="846" width="100" height="38"/>
+  <text x="1092" y="902" font-size="13" font-weight="700" fill="#1f4e79" text-anchor="middle">Switch secundário</text>
+  <text x="1092" y="919" font-size="12.5" fill="#1f4e79" text-anchor="middle">Lab. de Informática · 192.168.10.3</text>
+
+  <!-- Tomadas -> estações -->
+  <g stroke="#333333" stroke-width="1.6" fill="none">
+    <path d="M180 886 V938"/>
+    <path d="M400 886 V938"/>
+    <path d="M620 886 V938"/>
+    <path d="M840 886 V938"/>
+    <path d="M1092 926 V952"/>
+  </g>
+
+  <!-- ============ ESTAÇÕES DE TRABALHO ============ -->
+  <use href="#pc" x="130" y="938" width="100" height="84"/>
+  <text x="180" y="1042" font-size="13.5" font-weight="700" fill="#1f4e79" text-anchor="middle">Direção</text>
+  <text x="180" y="1060" font-size="13" fill="#1f4e79" text-anchor="middle">192.168.10.10</text>
+  <text x="180" y="1078" font-size="12.5" fill="#5c7b99" text-anchor="middle">Perfil: Administrador</text>
+
+  <use href="#pc" x="350" y="938" width="100" height="84"/>
+  <text x="400" y="1042" font-size="13.5" font-weight="700" fill="#1f4e79" text-anchor="middle">Secretaria / Coordenação</text>
+  <text x="400" y="1060" font-size="13" fill="#1f4e79" text-anchor="middle">192.168.10.11</text>
+  <text x="400" y="1078" font-size="12.5" fill="#5c7b99" text-anchor="middle">Perfil: Direção</text>
+
+  <use href="#pc" x="570" y="938" width="100" height="84"/>
+  <text x="620" y="1042" font-size="13.5" font-weight="700" fill="#1f4e79" text-anchor="middle">Sala dos Professores</text>
+  <text x="620" y="1060" font-size="13" fill="#1f4e79" text-anchor="middle">192.168.10.12</text>
+  <text x="620" y="1078" font-size="12.5" fill="#5c7b99" text-anchor="middle">Perfil: Professor</text>
+
+  <use href="#pc" x="790" y="938" width="100" height="84"/>
+  <text x="840" y="1042" font-size="13.5" font-weight="700" fill="#1f4e79" text-anchor="middle">Guarita / Portaria</text>
+  <text x="840" y="1060" font-size="13" fill="#1f4e79" text-anchor="middle">192.168.10.13</text>
+  <text x="840" y="1078" font-size="12.5" fill="#5c7b99" text-anchor="middle">Perfil: Suporte</text>
+
+  <use href="#pc" x="1042" y="952" width="100" height="84"/>
+  <text x="1092" y="1056" font-size="13.5" font-weight="700" fill="#1f4e79" text-anchor="middle">Estações do laboratório</text>
+  <text x="1092" y="1074" font-size="13" fill="#1f4e79" text-anchor="middle">192.168.10.20 a 192.168.10.49</text>
+
+  <!-- ============ ACCESS POINT E CLIENTES SEM FIO ============ -->
+  <use href="#ap" x="1238" y="636" width="96" height="62"/>
+  <text x="1286" y="716" font-size="14.5" font-weight="700" fill="#1f4e79" text-anchor="middle">Access Point Wi-Fi</text>
+  <text x="1286" y="735" font-size="13.5" fill="#1f4e79" text-anchor="middle">192.168.10.4</text>
+  <text x="1286" y="753" font-size="12.5" fill="#5c7b99" text-anchor="middle">SSID: REFLOW-EDU · WPA2</text>
+
+  <g stroke="#333333" stroke-width="1.6" stroke-dasharray="6 4" fill="none">
+    <path d="M1286 762 V812 M1230 812 H1342 M1230 812 V860 M1342 812 V880"/>
+  </g>
+  <text x="1286" y="800" font-size="12.5" fill="#5c7b99" text-anchor="middle">Wi-Fi 802.11ac</text>
+
+  <use href="#laptop" x="1180" y="860" width="100" height="72"/>
+  <text x="1230" y="952" font-size="13.5" font-weight="700" fill="#1f4e79" text-anchor="middle">Notebooks</text>
+  <text x="1230" y="970" font-size="12.5" fill="#5c7b99" text-anchor="middle">docentes</text>
+
+  <use href="#tablet" x="1316" y="880" width="52" height="70"/>
+  <text x="1342" y="970" font-size="13.5" font-weight="700" fill="#1f4e79" text-anchor="middle">Tablets</text>
+  <text x="1342" y="988" font-size="12.5" fill="#5c7b99" text-anchor="middle">coordenação</text>
+  <text x="1286" y="1016" font-size="12.5" fill="#1f4e79" text-anchor="middle">DHCP: 192.168.10.100 – .200</text>
+
+  <!-- ============ OBSERVAÇÕES TÉCNICAS ============ -->
+  <rect x="96" y="1098" width="1248" height="76" rx="8" fill="#f7fafd" stroke="#d6e4f2" stroke-width="1.5"/>
+  <text x="118" y="1122" font-size="13" fill="#1f4e79"><tspan font-weight="700">Cabeamento: </tspan>par trançado UTP Cat.6 com conectores RJ-45; patch panel e switch principal instalados em rack 19" na sala de TI.</text>
+  <text x="118" y="1144" font-size="13" fill="#1f4e79"><tspan font-weight="700">Sem servidor local: </tspan>a interface é entregue pela hospedagem em nuvem e todos os dados residem no Supabase (PostgreSQL) — a escola precisa apenas de saída para a internet.</text>
+  <text x="118" y="1166" font-size="13" fill="#1f4e79"><tspan font-weight="700">Firewall do roteador: </tspan>libera a porta 443 (HTTPS) para Supabase, Google OAuth e Gmail API; DHCP reservado para as estações fixas e dinâmico para os clientes sem fio.</text>
+
+</svg>

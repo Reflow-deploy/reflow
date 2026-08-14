@@ -1,0 +1,526 @@
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { DEFAULT_SPACES, DEFAULT_COLLABORATORS, DEFAULT_CLASSES } from './defaultData';
+
+/**
+ * Carrega os dados iniciais do Supabase ou usa os dados padrão (fallback) caso o banco esteja vazio ou inacessível.
+ */
+export async function loadInitialData() {
+  if (!isSupabaseConfigured()) {
+    console.warn('[Reflow] Supabase não configurado. Utilizando dados padrão locais.');
+    return {
+      spaces: DEFAULT_SPACES,
+      collaborators: DEFAULT_COLLABORATORS,
+      classes: DEFAULT_CLASSES,
+      occurrences: [],
+      auditLogs: []
+    };
+  }
+
+  try {
+    // 1. Carrega Espaços & Alocações
+    const { data: dbSpaces, error: spacesErr } = await supabase.from('spaces').select('*');
+    const { data: dbAllocations } = await supabase.from('allocations').select('*');
+
+    let spacesList = [];
+
+    if (!spacesErr && dbSpaces && dbSpaces.length > 0) {
+      spacesList = dbSpaces.map(sp => {
+        const spaceAllocations = (dbAllocations || [])
+          .filter(a => String(a.space_id) === String(sp.id))
+          .map(a => ({
+            id: String(a.id),
+            teacher: a.teacher,
+            class: a.class_name,
+            students: a.students_count,
+            date: a.date,
+            startTime: a.start_time,
+            endTime: a.end_time
+          }));
+
+        const isLabOrAudit = sp.type?.toLowerCase().includes('lab') || sp.type?.toLowerCase().includes('audit');
+        const defaultEquip = isLabOrAudit 
+          ? ['Projetor', 'Ar-condicionado', 'Lousa Digital', 'Computadores', 'Sistema de Som'] 
+          : ['Projetor', 'Ar-condicionado', 'Lousa Digital'];
+        const defaultDesk = isLabOrAudit ? 'Grupo' : 'Individual';
+
+        const rawEquip = sp.equipments;
+        const parsedEquip = Array.isArray(rawEquip) 
+          ? rawEquip 
+          : (typeof rawEquip === 'string' && rawEquip.startsWith('[') ? JSON.parse(rawEquip) : defaultEquip);
+
+        return {
+          id: String(sp.id),
+          name: sp.name,
+          type: sp.type,
+          capacity: Number(sp.capacity) || 30,
+          block: sp.block,
+          status: sp.status || 'LIVRE',
+          svgGroupId: sp.svg_group_id,
+          equipments: parsedEquip && parsedEquip.length > 0 ? parsedEquip : defaultEquip,
+          deskType: sp.desk_type || defaultDesk,
+          scheduleToday: spaceAllocations
+        };
+      });
+    } else {
+      // Fallback para salas padrão e sementeia no Supabase em segundo plano
+      spacesList = DEFAULT_SPACES;
+      seedSpacesIfEmpty();
+    }
+
+    // 2. Ocorrências
+    const { data: dbOccurrences } = await supabase.from('occurrences').select('*');
+    let occurrencesList = [];
+
+    if (dbOccurrences && dbOccurrences.length > 0) {
+      occurrencesList = dbOccurrences.map(o => ({
+        id: String(o.id),
+        spaceId: String(o.space_id),
+        spaceName: o.space_name,
+        failureType: o.failure_type,
+        priority: o.priority,
+        description: o.description,
+        status: o.status,
+        createdAt: o.created_at,
+        reportedBy: o.reported_by,
+        reportedByUserId: o.reported_by_user_id || null,
+        targetDepartment: o.target_department
+      }));
+    }
+
+    // 3. Auditoria de E-mails
+    const { data: dbAudit } = await supabase.from('audit_logs').select('*');
+    let auditLogsList = [];
+
+    if (dbAudit && dbAudit.length > 0) {
+      auditLogsList = dbAudit.map(a => ({
+        id: String(a.id),
+        occurrenceId: String(a.occurrence_id),
+        to: a.to_email,
+        subject: a.subject,
+        priorityBadge: a.priority_badge,
+        timestamp: a.timestamp,
+        snippet: a.snippet,
+        fullBody: a.full_body
+      }));
+    }
+
+    // 4. Colaboradores
+    const { data: dbCollaborators, error: colErr } = await supabase.from('collaborators').select('*');
+    let collaboratorsList = [];
+
+    if (!colErr && dbCollaborators && dbCollaborators.length > 0) {
+      collaboratorsList = dbCollaborators.map(c => ({
+        id: String(c.id),
+        initials: c.initials,
+        name: c.name,
+        status: c.status || 'PRESENTE',
+        category: c.category,
+        role: c.role,
+        email: c.email,
+        phone: c.phone,
+        startTime: c.start_time,
+        endTime: c.end_time,
+        workDays: c.work_days || [],
+        notes: c.notes,
+        // Conta de login vinculada (unificação Colaboradores + Contas & Cargos)
+        userId: c.user_id || null,
+        systemRole: c.system_role || 'Pendente',
+        // Foto do Google, sincronizada a cada login pelo Custom Access Token Hook
+        avatarUrl: c.avatar_url || null
+      }));
+    } else {
+      collaboratorsList = DEFAULT_COLLABORATORS;
+      seedCollaboratorsIfEmpty();
+    }
+
+    // 5. Turmas
+    const { data: dbClasses, error: classErr } = await supabase.from('classes').select('*');
+    let classesList = [];
+
+    if (!classErr && dbClasses && dbClasses.length > 0) {
+      classesList = dbClasses.map(cl => ({
+        id: String(cl.id),
+        name: cl.name,
+        studentsCount: Number(cl.students_count) || 30
+      }));
+    } else {
+      classesList = DEFAULT_CLASSES;
+      seedClassesIfEmpty();
+    }
+
+    return {
+      spaces: spacesList,
+      collaborators: collaboratorsList,
+      classes: classesList,
+      occurrences: occurrencesList,
+      auditLogs: auditLogsList
+    };
+
+  } catch (err) {
+    console.error('[Reflow] Erro ao carregar dados do Supabase:', err);
+    return {
+      spaces: DEFAULT_SPACES,
+      collaborators: DEFAULT_COLLABORATORS,
+      classes: DEFAULT_CLASSES,
+      occurrences: [],
+      auditLogs: []
+    };
+  }
+}
+
+// -------------------------------------------------------------
+// SEMENTES AUTOMÁTICAS (Caso o banco de dados esteja limpo)
+// -------------------------------------------------------------
+async function seedSpacesIfEmpty() {
+  try {
+    const spacesToInsert = DEFAULT_SPACES.map(sp => ({
+      id: sp.id,
+      name: sp.name,
+      type: sp.type,
+      capacity: sp.capacity,
+      block: sp.block,
+      status: sp.status,
+      svg_group_id: sp.svgGroupId
+    }));
+    await supabase.from('spaces').upsert(spacesToInsert);
+  } catch (e) {
+    console.warn('[Reflow] Aviso ao popular tabela spaces:', e);
+  }
+}
+
+async function seedCollaboratorsIfEmpty() {
+  try {
+    const colToInsert = DEFAULT_COLLABORATORS.map(c => ({
+      id: c.id,
+      initials: c.initials,
+      name: c.name,
+      status: c.status,
+      category: c.category,
+      role: c.role,
+      email: c.email,
+      phone: c.phone,
+      start_time: c.startTime,
+      end_time: c.endTime,
+      work_days: c.workDays,
+      notes: c.notes
+    }));
+    await supabase.from('collaborators').upsert(colToInsert);
+  } catch (e) {
+    console.warn('[Reflow] Aviso ao popular tabela collaborators:', e);
+  }
+}
+
+async function seedClassesIfEmpty() {
+  try {
+    const classesToInsert = DEFAULT_CLASSES.map(cl => ({
+      id: cl.id,
+      name: cl.name,
+      students_count: cl.studentsCount
+    }));
+    await supabase.from('classes').upsert(classesToInsert);
+  } catch (e) {
+    console.warn('[Reflow] Aviso ao popular tabela classes:', e);
+  }
+}
+
+// -------------------------------------------------------------
+// OPERAÇÕES DE AGENDAMENTO / ALOCAÇÃO
+// -------------------------------------------------------------
+export async function dbAddAllocation(allocData) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    const allocId = String(allocData.id || 'alloc-' + Date.now());
+    await supabase.from('allocations').insert({
+      id: allocId,
+      space_id: String(allocData.spaceId),
+      teacher: allocData.teacher,
+      class_name: allocData.class,
+      students_count: Number(allocData.students),
+      date: allocData.date,
+      start_time: allocData.startTime,
+      end_time: allocData.endTime
+    });
+
+    await supabase.from('spaces').update({ status: 'OCUPADO' }).eq('id', String(allocData.spaceId));
+  } catch (e) {
+    console.error('[Reflow] Erro ao salvar alocação no Supabase:', e);
+  }
+}
+
+export async function dbDeleteAllocation(allocId, spaceId) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    await supabase.from('allocations').delete().eq('id', String(allocId));
+
+    if (spaceId) {
+      const { data: remaining } = await supabase.from('allocations').select('*').eq('space_id', String(spaceId));
+      if (!remaining || remaining.length === 0) {
+        await supabase.from('spaces').update({ status: 'LIVRE' }).eq('id', String(spaceId));
+      }
+    }
+  } catch (e) {
+    console.error('[Reflow] Erro ao deletar alocação no Supabase:', e);
+  }
+}
+
+// -------------------------------------------------------------
+// OPERAÇÕES DE OCORRÊNCIAS & AUDITORIA
+// -------------------------------------------------------------
+export async function dbAddOccurrence(occData, auditData) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    const occId = String(occData.id || 'occ-' + Date.now());
+    await supabase.from('occurrences').insert({
+      id: occId,
+      space_id: String(occData.spaceId),
+      space_name: occData.spaceName,
+      failure_type: occData.failureType,
+      priority: occData.priority,
+      description: occData.description,
+      status: occData.status,
+      created_at: occData.createdAt,
+      reported_by: occData.reportedBy,
+      reported_by_user_id: occData.reportedByUserId || null,
+      target_department: occData.targetDepartment
+    });
+
+    if (auditData) {
+      const auditId = String(auditData.id || 'audit-' + Date.now());
+      await supabase.from('audit_logs').insert({
+        id: auditId,
+        occurrence_id: occId,
+        to_email: auditData.to,
+        subject: auditData.subject,
+        priority_badge: auditData.priorityBadge,
+        timestamp: auditData.timestamp,
+        snippet: auditData.snippet,
+        full_body: auditData.fullBody
+      });
+    }
+  } catch (e) {
+    console.error('[Reflow] Erro ao salvar ocorrência no Supabase:', e);
+  }
+}
+
+/**
+ * Atualiza o status de uma ocorrência (ex: ABERTO ⇄ RESOLVIDO).
+ * Usado pela Equipe de Suporte para dar baixa ou reabrir um chamado.
+ */
+export async function dbUpdateOccurrenceStatus(occId, status) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    await supabase.from('occurrences').update({ status }).eq('id', String(occId));
+  } catch (e) {
+    console.error('[Reflow] Erro ao atualizar status da ocorrência no Supabase:', e);
+  }
+}
+
+/**
+ * Apaga uma única ocorrência. A RLS só deixa isso passar pra Equipe de
+ * Suporte (qualquer uma) ou para quem reportou aquela ocorrência
+ * especificamente (comparando com auth.uid()).
+ */
+export async function dbDeleteOccurrence(occId) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    await supabase.from('occurrences').delete().eq('id', String(occId));
+  } catch (e) {
+    console.error('[Reflow] Erro ao excluir ocorrência no Supabase:', e);
+  }
+}
+
+// -------------------------------------------------------------
+// OPERAÇÕES DE TURMAS
+// -------------------------------------------------------------
+export async function dbAddClass(classData) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    const classId = String(classData.id || 'class-' + Date.now());
+    await supabase.from('classes').insert({
+      id: classId,
+      name: classData.name,
+      students_count: Number(classData.studentsCount)
+    });
+  } catch (e) {
+    console.error('[Reflow] Erro ao salvar turma no Supabase:', e);
+  }
+}
+
+export async function dbDeleteClass(classId) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    await supabase.from('classes').delete().eq('id', String(classId));
+  } catch (e) {
+    console.error('[Reflow] Erro ao deletar turma no Supabase:', e);
+  }
+}
+
+export async function dbUpdateClass(classData) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    await supabase.from('classes').update({
+      name: classData.name,
+      students_count: Number(classData.studentsCount)
+    }).eq('id', String(classData.id));
+  } catch (e) {
+    console.error('[Reflow] Erro ao atualizar turma no Supabase:', e);
+  }
+}
+
+// -------------------------------------------------------------
+// OPERAÇÕES DE COLABORADORES
+// -------------------------------------------------------------
+export async function dbSaveCollaborator(colData) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    const colId = String(colData.id || 'col-' + Date.now());
+    await supabase.from('collaborators').upsert({
+      id: colId,
+      initials: colData.initials,
+      name: colData.name,
+      status: colData.status || 'PRESENTE',
+      category: colData.category,
+      role: colData.role,
+      email: colData.email,
+      phone: colData.phone,
+      start_time: colData.startTime,
+      end_time: colData.endTime,
+      work_days: colData.workDays,
+      notes: colData.notes
+    });
+  } catch (e) {
+    console.error('[Reflow] Erro ao salvar colaborador no Supabase:', e);
+  }
+}
+
+export async function dbDeleteCollaborator(colId) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    await supabase.from('collaborators').delete().eq('id', String(colId));
+  } catch (e) {
+    console.error('[Reflow] Erro ao deletar colaborador no Supabase:', e);
+  }
+}
+
+/**
+ * Atualiza o cargo do sistema (Pendente/Professor/Direção/Equipe de
+ * Suporte/Administrador) de um colaborador — é a mesma coluna lida pelo
+ * Custom Access Token Hook no login. A RLS + trigger no banco só deixam
+ * isso passar quando quem está chamando é Administrador.
+ */
+export async function dbUpdateCollaboratorSystemRole(colId, newRole) {
+  if (!isSupabaseConfigured()) return;
+  const { error } = await supabase
+    .from('collaborators')
+    .update({ system_role: newRole })
+    .eq('id', String(colId));
+  if (error) throw error;
+}
+
+/**
+ * Busca o registro de colaborador vinculado ao usuário logado (por
+ * user_id), direto no banco — usado pra mostrar o cargo em tempo real em
+ * "Meu Perfil" em vez de confiar só no claim do JWT (que só é renovado a
+ * cada login/refresh de token, podendo ficar desatualizado por um tempo).
+ */
+export async function dbGetMyCollaboratorRecord(userId) {
+  if (!isSupabaseConfigured() || !userId) return null;
+  try {
+    const { data, error } = await supabase
+      .from('collaborators')
+      .select('name, role, system_role, initials')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    return { name: data.name, role: data.role, systemRole: data.system_role, initials: data.initials };
+  } catch (e) {
+    console.error('[Reflow] Erro ao buscar cargo em tempo real no Supabase:', e);
+    return null;
+  }
+}
+
+// -------------------------------------------------------------
+// OPERAÇÕES DE ESPAÇOS / SALAS
+// -------------------------------------------------------------
+export async function dbUpdateSpaceStatus(spaceId, status) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    await supabase.from('spaces').update({ status }).eq('id', String(spaceId));
+  } catch (e) {
+    console.error('[Reflow] Erro ao atualizar status do espaço no Supabase:', e);
+  }
+}
+
+export async function dbUpdateSpaceFeatures(spaceId, { equipments, deskType }) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    await supabase.from('spaces').update({ 
+      equipments, 
+      desk_type: deskType 
+    }).eq('id', String(spaceId));
+  } catch (e) {
+    console.error('[Reflow] Erro ao atualizar equipamentos e mesas no Supabase:', e);
+  }
+}
+
+export async function dbUpdateSpace(spaceData) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    await supabase.from('spaces').update({
+      name: spaceData.name,
+      type: spaceData.type,
+      capacity: Number(spaceData.capacity),
+      block: spaceData.block,
+      status: spaceData.status,
+      equipments: spaceData.equipments,
+      desk_type: spaceData.deskType
+    }).eq('id', String(spaceData.id));
+  } catch (e) {
+    console.error('[Reflow] Erro ao atualizar espaço no Supabase:', e);
+  }
+}
+
+export async function dbClearHistory() {
+  if (!isSupabaseConfigured()) return;
+  try {
+    await supabase.from('occurrences').delete().neq('id', '0');
+    await supabase.from('audit_logs').delete().neq('id', '0');
+  } catch (e) {
+    console.error('[Reflow] Erro ao limpar histórico no Supabase:', e);
+  }
+}
+
+// -------------------------------------------------------------
+// LIBERAÇÃO AUTOMÁTICA DE SALAS (Alocações Expiradas)
+// -------------------------------------------------------------
+/**
+ * Remove alocações expiradas do banco de dados e atualiza o status
+ * dos espaços para 'LIVRE' quando não houver mais alocações ativas.
+ * @param {string[]} expiredAllocIds - IDs das alocações expiradas
+ * @param {string[]} spaceIdsToRelease - IDs dos espaços que devem ser liberados
+ */
+export async function dbReleaseExpiredAllocations(expiredAllocIds, spaceIdsToRelease) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    // 1. Deleta cada alocação expirada
+    for (const allocId of expiredAllocIds) {
+      await supabase.from('allocations').delete().eq('id', String(allocId));
+    }
+
+    // 2. Para cada espaço, verifica se ainda tem alocações restantes
+    for (const spaceId of spaceIdsToRelease) {
+      const { data: remaining } = await supabase
+        .from('allocations')
+        .select('id')
+        .eq('space_id', String(spaceId));
+
+      if (!remaining || remaining.length === 0) {
+        await supabase.from('spaces').update({ status: 'LIVRE' }).eq('id', String(spaceId));
+        console.log(`[Reflow] 🔓 Sala ${spaceId} liberada automaticamente no banco de dados.`);
+      }
+    }
+  } catch (e) {
+    console.error('[Reflow] Erro ao liberar alocações expiradas no Supabase:', e);
+  }
+}
