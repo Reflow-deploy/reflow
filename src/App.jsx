@@ -372,7 +372,7 @@ Status Atual: ABERTO`
   }, [currentUser]);
 
   // --- Handlers ---
-  const handleAllocateConfirm = (allocationData) => {
+  const handleAllocateConfirm = async (allocationData) => {
     const { spaceId, teacher, class: className, students, startTime, endTime } = allocationData;
 
     const targetSpace = spaces.find(s => s.id === spaceId);
@@ -412,7 +412,16 @@ Status Atual: ABERTO`
       date: selectedDate
     };
 
-    dbAddAllocation(newAlloc);
+    // Só atualiza a tela e fecha o modal depois que o banco confirmar —
+    // se outra pessoa reservou o mesmo horário um instante antes, a trava
+    // do banco (allocations_no_overlap) recusa e o usuário fica sabendo.
+    try {
+      await dbAddAllocation(newAlloc);
+    } catch (err) {
+      console.error('[Reflow] Erro ao confirmar alocação:', err);
+      showToast(`⚠️ ${err.message || 'Não foi possível confirmar a reserva. Tente novamente.'}`);
+      return;
+    }
 
     setSpaces(prevSpaces => prevSpaces.map(sp => {
       if (sp.id === spaceId) {

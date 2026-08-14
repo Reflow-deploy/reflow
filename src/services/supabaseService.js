@@ -228,23 +228,28 @@ async function seedClassesIfEmpty() {
 // -------------------------------------------------------------
 export async function dbAddAllocation(allocData) {
   if (!isSupabaseConfigured()) return;
-  try {
-    const allocId = String(allocData.id || 'alloc-' + Date.now());
-    await supabase.from('allocations').insert({
-      id: allocId,
-      space_id: String(allocData.spaceId),
-      teacher: allocData.teacher,
-      class_name: allocData.class,
-      students_count: Number(allocData.students),
-      date: allocData.date,
-      start_time: allocData.startTime,
-      end_time: allocData.endTime
-    });
+  const allocId = String(allocData.id || 'alloc-' + Date.now());
+  const { error } = await supabase.from('allocations').insert({
+    id: allocId,
+    space_id: String(allocData.spaceId),
+    teacher: allocData.teacher,
+    class_name: allocData.class,
+    students_count: Number(allocData.students),
+    date: allocData.date,
+    start_time: allocData.startTime,
+    end_time: allocData.endTime
+  });
 
-    await supabase.from('spaces').update({ status: 'OCUPADO' }).eq('id', String(allocData.spaceId));
-  } catch (e) {
-    console.error('[Reflow] Erro ao salvar alocação no Supabase:', e);
+  if (error) {
+    // 23P01 = exclusion_violation — a trava allocations_no_overlap barrou
+    // um choque de horário (ex: duas pessoas confirmando ao mesmo tempo)
+    if (error.code === '23P01') {
+      throw new Error('Esse horário acabou de ser reservado por outra pessoa nesta sala. Escolha outro horário.');
+    }
+    throw error;
   }
+
+  await supabase.from('spaces').update({ status: 'OCUPADO' }).eq('id', String(allocData.spaceId));
 }
 
 export async function dbDeleteAllocation(allocId, spaceId) {
