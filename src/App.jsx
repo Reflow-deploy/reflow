@@ -364,7 +364,12 @@ Descrição:
 Status Atual: ABERTO`
       };
 
-      dbAddOccurrence(occurrence, newAudit);
+      try {
+        await dbAddOccurrence(occurrence, newAudit);
+      } catch (err) {
+        console.error('[Reflow] Erro ao salvar ocorrência no banco:', err);
+        showToast('⚠️ A ocorrência foi registrada na tela, mas falhou ao salvar no banco — pode não aparecer se a página for recarregada.');
+      }
       setAuditLogs(prev => [newAudit, ...prev]);
     });
 
@@ -443,8 +448,14 @@ Status Atual: ABERTO`
     showToast('Espaço Alocado com Sucesso! 🟢');
   };
 
-  const handleCancelReservation = (spaceId, allocationId) => {
-    dbDeleteAllocation(allocationId, spaceId);
+  const handleCancelReservation = async (spaceId, allocationId) => {
+    try {
+      await dbDeleteAllocation(allocationId, spaceId);
+    } catch (err) {
+      console.error('[Reflow] Erro ao cancelar reserva:', err);
+      showToast('⚠️ Não foi possível cancelar a reserva. Tente novamente.');
+      return;
+    }
 
     setSpaces(prevSpaces => prevSpaces.map(sp => {
       if (sp.id === spaceId) {
@@ -474,7 +485,13 @@ Status Atual: ABERTO`
   // colocar/tirar uma sala de MANUTENCAO automaticamente junto com o ciclo
   // de vida das ocorrências.
   const setSpaceStatus = (spaceId, status) => {
-    dbUpdateSpaceStatus(spaceId, status);
+    // Efeito colateral "melhor esforço" de ações maiores (resolver/reabrir
+    // ocorrência etc.) — não bloqueia a ação principal, mas agora avisa se
+    // falhar em vez de engolir o erro em silêncio.
+    dbUpdateSpaceStatus(spaceId, status).catch(err => {
+      console.error('[Reflow] Erro ao atualizar status da sala:', err);
+      showToast('⚠️ Não foi possível atualizar o status da sala no banco.');
+    });
     setSpaces(prev => prev.map(sp => sp.id === spaceId ? { ...sp, status } : sp));
     setSelectedSpace(prev => (prev && prev.id === spaceId) ? { ...prev, status } : prev);
   };
@@ -505,8 +522,14 @@ Status Atual: ABERTO`
     setReportModalSpaceId(null);
   };
 
-  const handleUpdateOccurrenceStatus = (id, newStatus) => {
-    dbUpdateOccurrenceStatus(id, newStatus);
+  const handleUpdateOccurrenceStatus = async (id, newStatus) => {
+    try {
+      await dbUpdateOccurrenceStatus(id, newStatus);
+    } catch (err) {
+      console.error('[Reflow] Erro ao atualizar status da ocorrência:', err);
+      showToast('⚠️ Não foi possível atualizar o status do chamado. Tente novamente.');
+      return;
+    }
 
     setOccurrences(prev => {
       const updated = prev.map(o => o.id === id ? { ...o, status: newStatus } : o);
@@ -533,8 +556,14 @@ Status Atual: ABERTO`
 
   // 🗑️ Qualquer cargo pode apagar a própria solicitação (a RLS garante
   // isso no banco); só a Equipe de Suporte pode "Limpar Histórico" geral.
-  const handleDeleteOccurrence = (id) => {
-    dbDeleteOccurrence(id);
+  const handleDeleteOccurrence = async (id) => {
+    try {
+      await dbDeleteOccurrence(id);
+    } catch (err) {
+      console.error('[Reflow] Erro ao excluir ocorrência:', err);
+      showToast('⚠️ Não foi possível excluir a solicitação. Tente novamente.');
+      return;
+    }
 
     setOccurrences(prev => {
       const target = prev.find(o => o.id === id);
@@ -553,13 +582,19 @@ Status Atual: ABERTO`
     showToast('Solicitação excluída. 🗑️');
   };
 
-  const handleAddCollaborator = (colData) => {
+  const handleAddCollaborator = async (colData) => {
     const finalData = {
       ...colData,
       id: colData.id || `collab-${Date.now()}`
     };
 
-    dbSaveCollaborator(finalData);
+    try {
+      await dbSaveCollaborator(finalData);
+    } catch (err) {
+      console.error('[Reflow] Erro ao salvar colaborador:', err);
+      showToast('⚠️ Não foi possível salvar o colaborador. Tente novamente.');
+      return;
+    }
 
     if (colData.id && collaborators.find(c => c.id === colData.id)) {
       setCollaborators(prev => prev.map(c => c.id === colData.id ? finalData : c));
@@ -572,20 +607,36 @@ Status Atual: ABERTO`
     setCollaboratorToEdit(null);
   };
 
-  const handleDeleteCollaborator = (id) => {
-    dbDeleteCollaborator(id);
+  const handleDeleteCollaborator = async (id) => {
+    try {
+      await dbDeleteCollaborator(id);
+    } catch (err) {
+      console.error('[Reflow] Erro ao remover colaborador:', err);
+      showToast('⚠️ Não foi possível remover o colaborador. Tente novamente.');
+      return;
+    }
     setCollaborators(prev => prev.filter(c => c.id !== id));
     showToast('Colaborador Removido');
   };
 
-  const handleAddClass = (classData) => {
+  const handleAddClass = async (classData) => {
     const exists = classes.some(c => c.id === classData.id);
+    try {
+      if (exists) {
+        await dbUpdateClass(classData);
+      } else {
+        await dbAddClass(classData);
+      }
+    } catch (err) {
+      console.error('[Reflow] Erro ao salvar turma:', err);
+      showToast('⚠️ Não foi possível salvar a turma. Tente novamente.');
+      return;
+    }
+
     if (exists) {
-      dbUpdateClass(classData);
       setClasses(prev => prev.map(c => c.id === classData.id ? classData : c));
       showToast('Turma Atualizada com Sucesso! 📚');
     } else {
-      dbAddClass(classData);
       setClasses(prev => [...prev, classData]);
       showToast('Turma Adicionada! 📚');
     }
@@ -593,14 +644,27 @@ Status Atual: ABERTO`
     setClassToEdit(null);
   };
 
-  const handleDeleteClass = (id) => {
-    dbDeleteClass(id);
+  const handleDeleteClass = async (id) => {
+    try {
+      await dbDeleteClass(id);
+    } catch (err) {
+      console.error('[Reflow] Erro ao remover turma:', err);
+      showToast('⚠️ Não foi possível remover a turma. Tente novamente.');
+      return;
+    }
     setClasses(prev => prev.filter(c => c.id !== id));
     showToast('Turma Removida');
   };
 
-  const handleUpdateSpaceFeatures = (spaceId, features) => {
-    dbUpdateSpaceFeatures(spaceId, features);
+  const handleUpdateSpaceFeatures = async (spaceId, features) => {
+    try {
+      await dbUpdateSpaceFeatures(spaceId, features);
+    } catch (err) {
+      console.error('[Reflow] Erro ao atualizar recursos da sala:', err);
+      showToast('⚠️ Não foi possível salvar os recursos da sala. Tente novamente.');
+      return;
+    }
+
     setSpaces(prev => prev.map(sp => {
       if (sp.id === spaceId) {
         return { ...sp, equipments: features.equipments, deskType: features.deskType };
@@ -613,8 +677,15 @@ Status Atual: ABERTO`
     showToast('Recursos e Mobiliário da sala atualizados! 🛠️');
   };
 
-  const handleUpdateSpace = (updatedSpaceData) => {
-    dbUpdateSpace(updatedSpaceData);
+  const handleUpdateSpace = async (updatedSpaceData) => {
+    try {
+      await dbUpdateSpace(updatedSpaceData);
+    } catch (err) {
+      console.error('[Reflow] Erro ao atualizar sala:', err);
+      showToast('⚠️ Não foi possível salvar as informações da sala. Tente novamente.');
+      return;
+    }
+
     setSpaces(prev => prev.map(sp => sp.id === updatedSpaceData.id ? updatedSpaceData : sp));
     if (selectedSpace && selectedSpace.id === updatedSpaceData.id) {
       setSelectedSpace(updatedSpaceData);
@@ -622,8 +693,14 @@ Status Atual: ABERTO`
     showToast('Informações da sala salvas com sucesso no banco! 🏢');
   };
 
-  const handleClearHistory = () => {
-    dbClearHistory();
+  const handleClearHistory = async () => {
+    try {
+      await dbClearHistory();
+    } catch (err) {
+      console.error('[Reflow] Erro ao limpar histórico:', err);
+      showToast('⚠️ Não foi possível limpar o histórico. Tente novamente.');
+      return;
+    }
     setOccurrences([]);
     setAuditLogs([]);
     showToast('Histórico de Ocorrências e Auditoria de E-mails Limpo! 🗑️');

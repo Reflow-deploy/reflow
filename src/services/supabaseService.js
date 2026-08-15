@@ -254,17 +254,14 @@ export async function dbAddAllocation(allocData) {
 
 export async function dbDeleteAllocation(allocId, spaceId) {
   if (!isSupabaseConfigured()) return;
-  try {
-    await supabase.from('allocations').delete().eq('id', String(allocId));
+  const { error } = await supabase.from('allocations').delete().eq('id', String(allocId));
+  if (error) throw error;
 
-    if (spaceId) {
-      const { data: remaining } = await supabase.from('allocations').select('*').eq('space_id', String(spaceId));
-      if (!remaining || remaining.length === 0) {
-        await supabase.from('spaces').update({ status: 'LIVRE' }).eq('id', String(spaceId));
-      }
+  if (spaceId) {
+    const { data: remaining } = await supabase.from('allocations').select('*').eq('space_id', String(spaceId));
+    if (!remaining || remaining.length === 0) {
+      await supabase.from('spaces').update({ status: 'LIVRE' }).eq('id', String(spaceId));
     }
-  } catch (e) {
-    console.error('[Reflow] Erro ao deletar alocação no Supabase:', e);
   }
 }
 
@@ -273,37 +270,35 @@ export async function dbDeleteAllocation(allocId, spaceId) {
 // -------------------------------------------------------------
 export async function dbAddOccurrence(occData, auditData) {
   if (!isSupabaseConfigured()) return;
-  try {
-    const occId = String(occData.id || 'occ-' + Date.now());
-    await supabase.from('occurrences').insert({
-      id: occId,
-      space_id: String(occData.spaceId),
-      space_name: occData.spaceName,
-      failure_type: occData.failureType,
-      priority: occData.priority,
-      description: occData.description,
-      status: occData.status,
-      created_at: occData.createdAt,
-      reported_by: occData.reportedBy,
-      reported_by_user_id: occData.reportedByUserId || null,
-      target_department: occData.targetDepartment
-    });
+  const occId = String(occData.id || 'occ-' + Date.now());
+  const { error } = await supabase.from('occurrences').insert({
+    id: occId,
+    space_id: String(occData.spaceId),
+    space_name: occData.spaceName,
+    failure_type: occData.failureType,
+    priority: occData.priority,
+    description: occData.description,
+    status: occData.status,
+    created_at: occData.createdAt,
+    reported_by: occData.reportedBy,
+    reported_by_user_id: occData.reportedByUserId || null,
+    target_department: occData.targetDepartment
+  });
+  if (error) throw error;
 
-    if (auditData) {
-      const auditId = String(auditData.id || 'audit-' + Date.now());
-      await supabase.from('audit_logs').insert({
-        id: auditId,
-        occurrence_id: occId,
-        to_email: auditData.to,
-        subject: auditData.subject,
-        priority_badge: auditData.priorityBadge,
-        timestamp: auditData.timestamp,
-        snippet: auditData.snippet,
-        full_body: auditData.fullBody
-      });
-    }
-  } catch (e) {
-    console.error('[Reflow] Erro ao salvar ocorrência no Supabase:', e);
+  if (auditData) {
+    const auditId = String(auditData.id || 'audit-' + Date.now());
+    const { error: auditError } = await supabase.from('audit_logs').insert({
+      id: auditId,
+      occurrence_id: occId,
+      to_email: auditData.to,
+      subject: auditData.subject,
+      priority_badge: auditData.priorityBadge,
+      timestamp: auditData.timestamp,
+      snippet: auditData.snippet,
+      full_body: auditData.fullBody
+    });
+    if (auditError) throw auditError;
   }
 }
 
@@ -313,11 +308,8 @@ export async function dbAddOccurrence(occData, auditData) {
  */
 export async function dbUpdateOccurrenceStatus(occId, status) {
   if (!isSupabaseConfigured()) return;
-  try {
-    await supabase.from('occurrences').update({ status }).eq('id', String(occId));
-  } catch (e) {
-    console.error('[Reflow] Erro ao atualizar status da ocorrência no Supabase:', e);
-  }
+  const { error } = await supabase.from('occurrences').update({ status }).eq('id', String(occId));
+  if (error) throw error;
 }
 
 /**
@@ -327,11 +319,8 @@ export async function dbUpdateOccurrenceStatus(occId, status) {
  */
 export async function dbDeleteOccurrence(occId) {
   if (!isSupabaseConfigured()) return;
-  try {
-    await supabase.from('occurrences').delete().eq('id', String(occId));
-  } catch (e) {
-    console.error('[Reflow] Erro ao excluir ocorrência no Supabase:', e);
-  }
+  const { error } = await supabase.from('occurrences').delete().eq('id', String(occId));
+  if (error) throw error;
 }
 
 // -------------------------------------------------------------
@@ -339,37 +328,28 @@ export async function dbDeleteOccurrence(occId) {
 // -------------------------------------------------------------
 export async function dbAddClass(classData) {
   if (!isSupabaseConfigured()) return;
-  try {
-    const classId = String(classData.id || 'class-' + Date.now());
-    await supabase.from('classes').insert({
-      id: classId,
-      name: classData.name,
-      students_count: Number(classData.studentsCount)
-    });
-  } catch (e) {
-    console.error('[Reflow] Erro ao salvar turma no Supabase:', e);
-  }
+  const classId = String(classData.id || 'class-' + Date.now());
+  const { error } = await supabase.from('classes').insert({
+    id: classId,
+    name: classData.name,
+    students_count: Number(classData.studentsCount)
+  });
+  if (error) throw error;
 }
 
 export async function dbDeleteClass(classId) {
   if (!isSupabaseConfigured()) return;
-  try {
-    await supabase.from('classes').delete().eq('id', String(classId));
-  } catch (e) {
-    console.error('[Reflow] Erro ao deletar turma no Supabase:', e);
-  }
+  const { error } = await supabase.from('classes').delete().eq('id', String(classId));
+  if (error) throw error;
 }
 
 export async function dbUpdateClass(classData) {
   if (!isSupabaseConfigured()) return;
-  try {
-    await supabase.from('classes').update({
-      name: classData.name,
-      students_count: Number(classData.studentsCount)
-    }).eq('id', String(classData.id));
-  } catch (e) {
-    console.error('[Reflow] Erro ao atualizar turma no Supabase:', e);
-  }
+  const { error } = await supabase.from('classes').update({
+    name: classData.name,
+    students_count: Number(classData.studentsCount)
+  }).eq('id', String(classData.id));
+  if (error) throw error;
 }
 
 // -------------------------------------------------------------
@@ -377,34 +357,28 @@ export async function dbUpdateClass(classData) {
 // -------------------------------------------------------------
 export async function dbSaveCollaborator(colData) {
   if (!isSupabaseConfigured()) return;
-  try {
-    const colId = String(colData.id || 'col-' + Date.now());
-    await supabase.from('collaborators').upsert({
-      id: colId,
-      initials: colData.initials,
-      name: colData.name,
-      status: colData.status || 'PRESENTE',
-      category: colData.category,
-      role: colData.role,
-      email: colData.email,
-      phone: colData.phone,
-      start_time: colData.startTime,
-      end_time: colData.endTime,
-      work_days: colData.workDays,
-      notes: colData.notes
-    });
-  } catch (e) {
-    console.error('[Reflow] Erro ao salvar colaborador no Supabase:', e);
-  }
+  const colId = String(colData.id || 'col-' + Date.now());
+  const { error } = await supabase.from('collaborators').upsert({
+    id: colId,
+    initials: colData.initials,
+    name: colData.name,
+    status: colData.status || 'PRESENTE',
+    category: colData.category,
+    role: colData.role,
+    email: colData.email,
+    phone: colData.phone,
+    start_time: colData.startTime,
+    end_time: colData.endTime,
+    work_days: colData.workDays,
+    notes: colData.notes
+  });
+  if (error) throw error;
 }
 
 export async function dbDeleteCollaborator(colId) {
   if (!isSupabaseConfigured()) return;
-  try {
-    await supabase.from('collaborators').delete().eq('id', String(colId));
-  } catch (e) {
-    console.error('[Reflow] Erro ao deletar colaborador no Supabase:', e);
-  }
+  const { error } = await supabase.from('collaborators').delete().eq('id', String(colId));
+  if (error) throw error;
 }
 
 /**
@@ -450,50 +424,39 @@ export async function dbGetMyCollaboratorRecord(userId) {
 // -------------------------------------------------------------
 export async function dbUpdateSpaceStatus(spaceId, status) {
   if (!isSupabaseConfigured()) return;
-  try {
-    await supabase.from('spaces').update({ status }).eq('id', String(spaceId));
-  } catch (e) {
-    console.error('[Reflow] Erro ao atualizar status do espaço no Supabase:', e);
-  }
+  const { error } = await supabase.from('spaces').update({ status }).eq('id', String(spaceId));
+  if (error) throw error;
 }
 
 export async function dbUpdateSpaceFeatures(spaceId, { equipments, deskType }) {
   if (!isSupabaseConfigured()) return;
-  try {
-    await supabase.from('spaces').update({ 
-      equipments, 
-      desk_type: deskType 
-    }).eq('id', String(spaceId));
-  } catch (e) {
-    console.error('[Reflow] Erro ao atualizar equipamentos e mesas no Supabase:', e);
-  }
+  const { error } = await supabase.from('spaces').update({
+    equipments,
+    desk_type: deskType
+  }).eq('id', String(spaceId));
+  if (error) throw error;
 }
 
 export async function dbUpdateSpace(spaceData) {
   if (!isSupabaseConfigured()) return;
-  try {
-    await supabase.from('spaces').update({
-      name: spaceData.name,
-      type: spaceData.type,
-      capacity: Number(spaceData.capacity),
-      block: spaceData.block,
-      status: spaceData.status,
-      equipments: spaceData.equipments,
-      desk_type: spaceData.deskType
-    }).eq('id', String(spaceData.id));
-  } catch (e) {
-    console.error('[Reflow] Erro ao atualizar espaço no Supabase:', e);
-  }
+  const { error } = await supabase.from('spaces').update({
+    name: spaceData.name,
+    type: spaceData.type,
+    capacity: Number(spaceData.capacity),
+    block: spaceData.block,
+    status: spaceData.status,
+    equipments: spaceData.equipments,
+    desk_type: spaceData.deskType
+  }).eq('id', String(spaceData.id));
+  if (error) throw error;
 }
 
 export async function dbClearHistory() {
   if (!isSupabaseConfigured()) return;
-  try {
-    await supabase.from('occurrences').delete().neq('id', '0');
-    await supabase.from('audit_logs').delete().neq('id', '0');
-  } catch (e) {
-    console.error('[Reflow] Erro ao limpar histórico no Supabase:', e);
-  }
+  const { error: occError } = await supabase.from('occurrences').delete().neq('id', '0');
+  if (occError) throw occError;
+  const { error: auditError } = await supabase.from('audit_logs').delete().neq('id', '0');
+  if (auditError) throw auditError;
 }
 
 // -------------------------------------------------------------
