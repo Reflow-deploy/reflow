@@ -21,11 +21,17 @@ export const ROLES = {
  * à Central de Ocorrências (visualizar chamados, limpar histórico e atualizar
  * o status dos chamados entre ABERTO e RESOLVIDO) — sem acesso ao Mapa
  * Interativo (alocação de salas) nem às Configurações.
+ *
+ * O Dashboard/Analytics (agregados de todas as salas, inclusive desempenho
+ * de resolução de chamados) é informação gerencial — restrito a Direção e
+ * Administrador, seguindo o mesmo princípio de menor privilégio já usado
+ * pra Equipe de Suporte. Professor mantém o mesmo acesso de sempre.
  */
 export function getAllowedTabs(role) {
   if (role === ROLES.SUPORTE) return ['occurrences'];
   if (!role || role === ROLES.PENDENTE) return [];
-  return ['map', 'occurrences', 'settings'];
+  if (role === ROLES.ADMIN || role === ROLES.DIRECAO) return ['map', 'occurrences', 'dashboard', 'settings'];
+  return ['map', 'occurrences', 'settings']; // Professor
 }
 
 export function canAccessTab(role, tabId) {

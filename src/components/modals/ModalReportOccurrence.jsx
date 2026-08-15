@@ -32,7 +32,7 @@ export default function ModalReportOccurrence({
       priority,
       targetEmail,
       description,
-      createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      createdAt: new Date().toISOString()
     });
   };
 

@@ -12,7 +12,8 @@ export async function loadInitialData() {
       collaborators: DEFAULT_COLLABORATORS,
       classes: DEFAULT_CLASSES,
       occurrences: [],
-      auditLogs: []
+      auditLogs: [],
+      allocations: []
     };
   }
 
@@ -21,20 +22,35 @@ export async function loadInitialData() {
     const { data: dbSpaces, error: spacesErr } = await supabase.from('spaces').select('*');
     const { data: dbAllocations } = await supabase.from('allocations').select('*');
 
+    // Mapeamento único de allocations — reaproveitado tanto pela lista flat
+    // (usada pelo Dashboard/Analytics) quanto pelo scheduleToday embutido em
+    // cada sala (formato já existente, mantido intacto abaixo).
+    const allocationsFlat = (dbAllocations || []).map(a => ({
+      id: String(a.id),
+      spaceId: String(a.space_id),
+      teacher: a.teacher,
+      className: a.class_name,
+      studentsCount: Number(a.students_count) || 0,
+      date: a.date,
+      startTime: a.start_time,
+      endTime: a.end_time,
+      createdAt: a.created_at
+    }));
+
     let spacesList = [];
 
     if (!spacesErr && dbSpaces && dbSpaces.length > 0) {
       spacesList = dbSpaces.map(sp => {
-        const spaceAllocations = (dbAllocations || [])
-          .filter(a => String(a.space_id) === String(sp.id))
+        const spaceAllocations = allocationsFlat
+          .filter(a => a.spaceId === String(sp.id))
           .map(a => ({
-            id: String(a.id),
+            id: a.id,
             teacher: a.teacher,
-            class: a.class_name,
-            students: a.students_count,
+            class: a.className,
+            students: a.studentsCount,
             date: a.date,
-            startTime: a.start_time,
-            endTime: a.end_time
+            startTime: a.startTime,
+            endTime: a.endTime
           }));
 
         const isLabOrAudit = sp.type?.toLowerCase().includes('lab') || sp.type?.toLowerCase().includes('audit');
@@ -81,6 +97,7 @@ export async function loadInitialData() {
         description: o.description,
         status: o.status,
         createdAt: o.created_at,
+        resolvedAt: o.resolved_at || null,
         reportedBy: o.reported_by,
         reportedByUserId: o.reported_by_user_id || null,
         targetDepartment: o.target_department
@@ -153,7 +170,8 @@ export async function loadInitialData() {
       collaborators: collaboratorsList,
       classes: classesList,
       occurrences: occurrencesList,
-      auditLogs: auditLogsList
+      auditLogs: auditLogsList,
+      allocations: allocationsFlat
     };
 
   } catch (err) {
@@ -163,7 +181,8 @@ export async function loadInitialData() {
       collaborators: DEFAULT_COLLABORATORS,
       classes: DEFAULT_CLASSES,
       occurrences: [],
-      auditLogs: []
+      auditLogs: [],
+      allocations: []
     };
   }
 }

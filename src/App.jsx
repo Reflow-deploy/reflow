@@ -6,6 +6,7 @@ import InteractiveMap from './components/InteractiveMap';
 import SpaceDrawer from './components/SpaceDrawer';
 import OccurrencesCenter from './components/OccurrencesCenter';
 import SettingsModule from './components/SettingsModule';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
 import LoginScreen from './components/LoginScreen';
 import AuthCallback from './components/AuthCallback';
 import PendingApproval from './components/PendingApproval';
@@ -42,6 +43,15 @@ import { eventService, EVENTS } from './services/eventService';
 import { sendOccurrenceEmail } from './services/gmailService';
 import { getAllowedTabs, ROLES } from './utils/permissions';
 import { getRoleFromSession } from './utils/jwt';
+
+// occurrence.createdAt agora é ISO 8601 completo (data + hora), não mais só
+// "HH:mm" — formata pro padrão pt-BR pra exibição em e-mail/UI.
+function formatOccurrenceTimestamp(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+}
 import { useIsMobile } from './utils/useIsMobile';
 
 export default function App() {
@@ -138,6 +148,7 @@ export default function App() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [adminAuditLog, setAdminAuditLog] = useState([]);
   const [adminAuditLogLoading, setAdminAuditLogLoading] = useState(false);
+  const [allocations, setAllocations] = useState([]);
 
   const [selectedSpace, setSelectedSpace] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -194,6 +205,7 @@ export default function App() {
       if (data.classes) setClasses(data.classes);
       if (data.occurrences) setOccurrences(data.occurrences);
       if (data.auditLogs) setAuditLogs(data.auditLogs);
+      if (data.allocations) setAllocations(data.allocations);
     });
   }, []);
 
@@ -338,7 +350,7 @@ export default function App() {
                 </tr>
                 <tr style="border-bottom: 1px solid #f1f5f9;">
                   <td style="padding: 10px 0; color: #64748b; font-size: 13px; font-weight: 600;">🕒 Horário do Chamado:</td>
-                  <td style="padding: 10px 0; color: #0f2942; font-size: 14px; font-weight: 600;">${occurrence.createdAt}</td>
+                  <td style="padding: 10px 0; color: #0f2942; font-size: 14px; font-weight: 600;">${formatOccurrenceTimestamp(occurrence.createdAt)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 10px 0; color: #64748b; font-size: 13px; font-weight: 600;">✉️ Destinatário:</td>
@@ -402,7 +414,7 @@ export default function App() {
         fullBody: `DE: Reflow (envio automático)
 PARA: ${targetEmail}
 STATUS ENTREGA: ${apiStatusText}
-DATA: ${todayDateString()} - ${occurrence.createdAt}
+DATA: ${formatOccurrenceTimestamp(occurrence.createdAt)}
 ASSUNTO: ${subject}
 
 Uma nova ocorrência foi aberta no sistema Reflow:
@@ -586,7 +598,12 @@ Status Atual: ABERTO`
     }
 
     setOccurrences(prev => {
-      const updated = prev.map(o => o.id === id ? { ...o, status: newStatus } : o);
+      // Também sincroniza resolvedAt localmente, espelhando o que a trigger
+      // do banco faz — sem isso, o Dashboard só veria o novo resolved_at
+      // depois de um reload, já que loadInitialData() roda uma vez só.
+      const updated = prev.map(o => o.id === id
+        ? { ...o, status: newStatus, resolvedAt: newStatus === 'RESOLVIDO' ? new Date().toISOString() : null }
+        : o);
       const changedOcc = updated.find(o => o.id === id);
 
       if (changedOcc) {
@@ -878,6 +895,14 @@ Status Atual: ABERTO`
               onClearHistory={handleClearHistory}
               onDeleteOccurrence={handleDeleteOccurrence}
               onResendEmail={handleResendEmail}
+            />
+          )}
+
+          {activeTab === 'dashboard' && (
+            <AnalyticsDashboard
+              spaces={spacesWithRealTimeStatus}
+              occurrences={occurrences}
+              allocations={allocations}
             />
           )}
 

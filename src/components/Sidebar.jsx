@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Map, Calendar, AlertTriangle, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { Map, Calendar, AlertTriangle, BarChart3, Settings, LogOut, ChevronDown } from 'lucide-react';
 import ModalProfile from './modals/ModalProfile';
 import { getAllowedTabs } from '../utils/permissions';
 import { useIsMobile } from '../utils/useIsMobile';
@@ -14,6 +14,7 @@ export default function Sidebar({ activeTab, setActiveTab, spacesCount, occupied
   const navItems = [
     { id: 'map', label: 'Mapa Interativo', icon: Map },
     { id: 'occurrences', label: 'Ocorrências', icon: AlertTriangle, badgeCount: occurrencesCount },
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'settings', label: 'Configurações', icon: Settings },
   ].filter(item => allowedTabs.includes(item.id));
 

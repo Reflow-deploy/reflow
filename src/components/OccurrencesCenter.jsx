@@ -3,6 +3,17 @@ import { AlertTriangle, Mail, Trash2, CheckCircle2, Clock, ShieldAlert, Send, Re
 import { ROLES } from '../utils/permissions';
 import { useIsMobile } from '../utils/useIsMobile';
 
+// createdAt/timestamp agora são ISO 8601 completos (data + hora), não mais
+// só "HH:mm" — formata pro padrão pt-BR, mesmo estilo já usado em
+// AdminAuditView.jsx. Cai de volta pro valor cru se não for uma data válida
+// (ex: registros antigos, se algum dia existirem).
+function formatDateTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+}
+
 export default function OccurrencesCenter({
   occurrences = [],
   auditLogs = [],
@@ -318,7 +329,7 @@ export default function OccurrencesCenter({
                           {status}
                         </span>
                         <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                          🕒 {occ.createdAt}
+                          🕒 {formatDateTime(occ.createdAt)}
                         </span>
                       </div>
 
@@ -426,7 +437,7 @@ export default function OccurrencesCenter({
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#64748b', marginBottom: '0.2rem' }}>
                           <span>Para: {log.to}</span>
-                          <span>🕒 {log.timestamp}</span>
+                          <span>🕒 {formatDateTime(log.timestamp)}</span>
                         </div>
                         <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#0f2942', marginBottom: '0.25rem' }}>
                           {log.subject}
@@ -500,7 +511,7 @@ export default function OccurrencesCenter({
                       </div>
                       <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                         <div><strong>Destinatário (Gmail):</strong> {activeLog.to}</div>
-                        <div><strong>Horário do Disparo:</strong> {activeLog.timestamp}</div>
+                        <div><strong>Horário do Disparo:</strong> {formatDateTime(activeLog.timestamp)}</div>
                         {activeLog.gmailMessageId && (
                           <div style={{ color: '#166534', fontWeight: 600 }}>
                             <strong>Gmail Message ID:</strong> {activeLog.gmailMessageId} (Status: HTTP 200 OK)
