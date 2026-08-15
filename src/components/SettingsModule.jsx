@@ -71,7 +71,7 @@ export default function SettingsModule({
   return (
     <div style={{ padding: '1.5rem 2rem', flex: 1, overflowY: 'auto' }}>
       {/* Settings Navigation Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
           <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f2942' }}>
             Configurações do Sistema
@@ -82,7 +82,7 @@ export default function SettingsModule({
         </div>
 
         {/* Sub-Tabs */}
-        <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '0.25rem', borderRadius: '0.5rem' }}>
+        <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '0.25rem', borderRadius: '0.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>
           <button
             onClick={() => setSubTab('RESERVATIONS')}
             style={{
@@ -93,7 +93,9 @@ export default function SettingsModule({
               fontWeight: 600,
               cursor: 'pointer',
               backgroundColor: subTab === 'RESERVATIONS' ? '#0b2238' : 'transparent',
-              color: subTab === 'RESERVATIONS' ? '#ffffff' : '#64748b'
+              color: subTab === 'RESERVATIONS' ? '#ffffff' : '#64748b',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
             }}
           >
             Minhas Reservas
@@ -109,7 +111,9 @@ export default function SettingsModule({
               fontWeight: 600,
               cursor: 'pointer',
               backgroundColor: subTab === 'CLASSES' ? '#0b2238' : 'transparent',
-              color: subTab === 'CLASSES' ? '#ffffff' : '#64748b'
+              color: subTab === 'CLASSES' ? '#ffffff' : '#64748b',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
             }}
           >
             Turmas
@@ -128,7 +132,9 @@ export default function SettingsModule({
               color: subTab === 'PROFESSIONALS' ? '#ffffff' : '#64748b',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.35rem'
+              gap: '0.35rem',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
             }}
           >
             Profissionais
@@ -156,7 +162,9 @@ export default function SettingsModule({
               fontWeight: 600,
               cursor: 'pointer',
               backgroundColor: subTab === 'SPACES' ? '#0b2238' : 'transparent',
-              color: subTab === 'SPACES' ? '#ffffff' : '#64748b'
+              color: subTab === 'SPACES' ? '#ffffff' : '#64748b',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
             }}
           >
             Salas
@@ -176,7 +184,9 @@ export default function SettingsModule({
                 alignItems: 'center',
                 gap: '0.35rem',
                 backgroundColor: subTab === 'AUDIT' ? '#0b2238' : 'transparent',
-                color: subTab === 'AUDIT' ? '#ffffff' : '#64748b'
+                color: subTab === 'AUDIT' ? '#ffffff' : '#64748b',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
               }}
             >
               <ShieldCheck size={14} />
@@ -199,7 +209,7 @@ export default function SettingsModule({
       {subTab === 'SPACES' && (
         <div>
           {/* Top Action & Search Bar */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, maxWidth: '480px' }}>
               <div style={{ position: 'relative', width: '100%' }}>
                 <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
@@ -324,8 +334,8 @@ export default function SettingsModule({
       {subTab === 'PROFESSIONALS' && (
         <div>
           {/* Top Action & Search Bar */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, maxWidth: '600px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, maxWidth: '600px', flexWrap: 'wrap' }}>
               <div style={{ position: 'relative', width: '100%' }}>
                 <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
@@ -575,7 +585,7 @@ export default function SettingsModule({
       {/* VIEW: TURMAS */}
       {subTab === 'CLASSES' && (
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f2942', margin: 0 }}>
               Lista de Turmas Cadastradas
             </h2>

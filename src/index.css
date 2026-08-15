@@ -77,6 +77,14 @@
   padding: 0;
 }
 
+/* overflow-x:hidden precisa estar em html E body — no Safari iOS,
+   só em body não é suficiente pra impedir scroll horizontal quando
+   algum elemento filho (especialmente com position:fixed, como a
+   Sidebar/Header) estoura a largura da viewport. */
+html {
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--background);

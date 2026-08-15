@@ -69,7 +69,7 @@ export default function OccurrencesCenter({
 
         {/* Navigation Tabs & Clear Button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '0.25rem', borderRadius: '0.5rem' }}>
+          <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '0.25rem', borderRadius: '0.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>
             <button
               onClick={() => setActiveTab('LIST')}
               style={{
@@ -80,7 +80,9 @@ export default function OccurrencesCenter({
                 fontWeight: 600,
                 cursor: 'pointer',
                 backgroundColor: activeTab === 'LIST' ? '#0b2238' : 'transparent',
-                color: activeTab === 'LIST' ? '#ffffff' : '#64748b'
+                color: activeTab === 'LIST' ? '#ffffff' : '#64748b',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
               }}
             >
               Lista de Ocorrências ({occurrences.length})
@@ -98,7 +100,9 @@ export default function OccurrencesCenter({
                 color: activeTab === 'AUDIT' ? '#ffffff' : '#64748b',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.35rem'
+                gap: '0.35rem',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
               }}
             >
               Auditoria de E-mails
@@ -148,7 +152,7 @@ export default function OccurrencesCenter({
       {activeTab === 'LIST' && (
         <div className="card-reflow" style={{ padding: '1.5rem' }}>
           {/* Status Filter Bar (ABERTO / RESOLVIDO) */}
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
             <button
               onClick={() => setFilterStatus('ABERTO')}
               style={{
@@ -197,7 +201,7 @@ export default function OccurrencesCenter({
           </div>
 
           {/* Department Filter Bar */}
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem', flexWrap: 'wrap' }}>
             <button
               onClick={() => setFilterDept('ALL')}
               style={{
