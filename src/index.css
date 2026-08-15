@@ -255,6 +255,10 @@ body {
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  /* Sem isso, um modal mais alto que a viewport (comum em telas de
+     celular) fica com o topo e o rodapé igualmente cortados e
+     inalcançáveis — o overlay nunca ficava rolável. */
+  overflow-y: auto;
 }
 
 /* Isometric 3D School Map Styles */

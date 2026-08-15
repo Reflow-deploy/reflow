@@ -119,9 +119,27 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
 
   return (
     <div className="modal-overlay animate-fade-in">
-      <div className="card-reflow" style={{ width: '100%', maxWidth: '480px', padding: '1.5rem', position: 'relative' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+      <div className="card-reflow" style={{
+        width: '100%',
+        maxWidth: '480px',
+        maxHeight: '90vh',
+        padding: 0,
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}>
+        {/* Header fixo — sempre visível, mesmo com o formulário rolando
+            (num celular, o card inteiro costuma ser mais alto que a
+            tela, então isso evita perder o título/botão fechar) */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '1.5rem 1.5rem 1rem 1.5rem',
+          borderBottom: '1px solid #f1f5f9',
+          flexShrink: 0
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.1rem', color: '#0f2942' }}>
             <Calendar size={20} color="#0f2942" />
             Alocar Espaço / Reserva
@@ -130,6 +148,10 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
             <X size={20} />
           </button>
         </div>
+
+        {/* Conteúdo rolável — só esta parte rola, header e rodapé ficam fixos */}
+        <form onSubmit={handleConfirm} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
+        <div style={{ overflowY: 'auto', padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
         {/* Selected Space Info Badge */}
         <div style={{
@@ -192,7 +214,6 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
         )}
 
         {/* Form Fields */}
-        <form onSubmit={handleConfirm} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '0.35rem' }}>
               Professor Responsável *
@@ -271,23 +292,34 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
             </div>
           </div>
 
-          {/* Action Footer */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{ backgroundColor: '#f1f5f9', color: '#475569', fontWeight: 600, fontSize: '0.875rem', padding: '0.6rem 1.2rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              style={{ backgroundColor: '#15803d', color: '#ffffff', fontWeight: 600, fontSize: '0.875rem', padding: '0.6rem 1.4rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
-            >
-              <Check size={18} />
-              Confirmar Reserva
-            </button>
-          </div>
+        </div>
+
+        {/* Rodapé fixo — Cancelar/Confirmar sempre acessíveis, mesmo com
+            o formulário acima rolando (não fica preso lá embaixo do
+            campo "Hora de Término" numa tela pequena) */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: '0.75rem',
+          padding: '1rem 1.5rem',
+          borderTop: '1px solid #f1f5f9',
+          flexShrink: 0
+        }}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ backgroundColor: '#f1f5f9', color: '#475569', fontWeight: 600, fontSize: '0.875rem', padding: '0.6rem 1.2rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            style={{ backgroundColor: '#15803d', color: '#ffffff', fontWeight: 600, fontSize: '0.875rem', padding: '0.6rem 1.4rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+          >
+            <Check size={18} />
+            Confirmar Reserva
+          </button>
+        </div>
         </form>
       </div>
     </div>
