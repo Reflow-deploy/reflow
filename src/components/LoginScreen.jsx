@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { AlertCircle } from 'lucide-react';
 
-export default function LoginScreen() {
+export default function LoginScreen({ reason, onDismissReason } = {}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Mostra o motivo de um logout forçado (ex: conta excluída por um Admin)
+  // uma única vez, depois avisa o pai para limpar — evita que a mensagem
+  // reapareça numa sessão de login futura sem relação com o motivo original.
+  useEffect(() => {
+    if (reason) onDismissReason?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleGoogleLogin = async () => {
     if (!isSupabaseConfigured()) {
@@ -95,6 +103,27 @@ export default function LoginScreen() {
             Acesse o sistema utilizando sua conta do Google
           </p>
         </div>
+
+        {/* Logout Reason Alert (ex: conta excluída por um Admin) */}
+        {reason && (
+          <div style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '0.75rem',
+            padding: '0.75rem 1rem',
+            backgroundColor: '#fef3c7',
+            border: '1px solid #fde68a',
+            borderRadius: '8px',
+            color: '#92400e',
+            fontSize: '0.85rem',
+            marginBottom: '1.25rem',
+            boxSizing: 'border-box'
+          }}>
+            <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <span>{reason}</span>
+          </div>
+        )}
 
         {/* Error Alert */}
         {error && (

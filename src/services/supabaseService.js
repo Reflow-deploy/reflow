@@ -419,6 +419,30 @@ export async function dbGetMyCollaboratorRecord(userId) {
   }
 }
 
+/**
+ * Verifica se o colaborador vinculado ao usuário logado ainda existe no
+ * banco (por user_id) — usado pelo polling de logout automático em App.jsx,
+ * que desloga a sessão se a conta foi excluída por um Administrador/Direção.
+ *
+ * Diferente de dbGetMyCollaboratorRecord, distingue explicitamente "linha
+ * não encontrada" (exists: false) de "erro ao consultar" (exists: null) —
+ * um erro transitório de rede nunca deve ser interpretado como "conta
+ * excluída" e forçar um logout indevido.
+ */
+export async function dbCheckCollaboratorExists(userId) {
+  if (!isSupabaseConfigured() || !userId) return { exists: null };
+  const { data, error } = await supabase
+    .from('collaborators')
+    .select('id')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) {
+    console.error('[Reflow] Erro ao verificar se a conta ainda existe:', error);
+    return { exists: null };
+  }
+  return { exists: !!data };
+}
+
 // -------------------------------------------------------------
 // OPERAÇÕES DE ESPAÇOS / SALAS
 // -------------------------------------------------------------

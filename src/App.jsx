@@ -34,7 +34,8 @@ import {
   dbUpdateSpaceFeatures,
   dbUpdateSpace,
   dbUpdateClass,
-  dbReleaseExpiredAllocations
+  dbReleaseExpiredAllocations,
+  dbCheckCollaboratorExists
 } from './services/supabaseService';
 import { eventService, EVENTS } from './services/eventService';
 import { sendOccurrenceEmail } from './services/gmailService';
@@ -114,6 +115,18 @@ export default function App() {
     showToast('Você saiu da sua conta.');
   };
 
+  // Logout forçado (não pelo próprio usuário) — usado quando o polling de
+  // "minha conta ainda existe?" detecta que o colaborador foi excluído do
+  // banco por um Administrador/Direção. Mostra o motivo na tela de Login.
+  const handleForcedLogout = async (reason) => {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    setSession(null);
+    setCurrentUser(null);
+    setLogoutReason(reason);
+  };
+
   const [activeTab, setActiveTab] = useState('map'); // map | timeline | occurrences | settings
   const [spaces, setSpaces] = useState([]);
   const [collaborators, setCollaborators] = useState([]);
@@ -126,6 +139,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState(todayDateString());
   const [toastMessage, setToastMessage] = useState(null);
+  const [logoutReason, setLogoutReason] = useState(null);
   const [, setTick] = useState(0);
 
   // Modals state
@@ -182,6 +196,31 @@ export default function App() {
     const interval = setInterval(() => setTick(t => t + 1), 60_000);
     return () => clearInterval(interval);
   }, []);
+
+  // 🔒 Logout automático — a cada 10s, confirma que a conta do usuário
+  // logado ainda existe em collaborators. Se um Administrador/Direção a
+  // excluir enquanto a sessão está ativa, o access_token atual continua
+  // sendo aceito pelo Supabase até expirar (a policy de RLS só lê o claim
+  // já embutido no JWT, não re-consulta o banco a cada request) — este
+  // polling é o que força o logout sem esperar essa expiração natural.
+  // 10s casa com o intervalo já usado pela liberação automática de
+  // alocações expiradas logo abaixo — mesmo padrão, custo desprezível
+  // (SELECT leve por id) para o tamanho desta aplicação.
+  // Só roda para usuários já aprovados: para "Pendente", a policy de
+  // leitura de collaborators exige is_approved(), então a query seria
+  // bloqueada por RLS (não por ausência real da linha) — geraria falso
+  // positivo. Quem está Pendente já tem seu próprio tratamento (tela
+  // "Aguardando Aprovação" + botão "Verificar novamente").
+  useEffect(() => {
+    if (!currentUser?.id || currentUser.role === ROLES.PENDENTE) return;
+    const checkInterval = setInterval(async () => {
+      const { exists } = await dbCheckCollaboratorExists(currentUser.id);
+      if (exists === false) {
+        handleForcedLogout('Sua conta foi removida do sistema. Você foi desconectado automaticamente.');
+      }
+    }, 10_000);
+    return () => clearInterval(checkInterval);
+  }, [currentUser?.id, currentUser?.role]);
 
   // 🔓 Liberação Automática — verifica alocações expiradas a cada 60s
   useEffect(() => {
@@ -735,7 +774,7 @@ Status Atual: ABERTO`
   }
 
   if (!session) {
-    return <LoginScreen />;
+    return <LoginScreen reason={logoutReason} onDismissReason={() => setLogoutReason(null)} />;
   }
 
   if (!currentUser || currentUser.role === ROLES.PENDENTE) {
