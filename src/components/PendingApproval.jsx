@@ -1,12 +1,52 @@
-import React from 'react';
-import { Hourglass, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { Hourglass, LogOut, RefreshCw, AlertCircle } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
+import { getRoleFromSession } from '../utils/jwt';
+import { ROLES } from '../utils/permissions';
 
 /**
  * Tela exibida para contas com cargo "Pendente" — todo novo login (via
  * Google) recebe esse cargo automaticamente até um Administrador aprovar
- * e definir o cargo real diretamente na tabela `user_roles` do Supabase.
+ * e definir o cargo real diretamente na tabela `collaborators` do Supabase.
+ *
+ * O cargo é lido de um claim customizado (`user_role`) dentro do JWT,
+ * injetado pelo Custom Access Token Hook a cada emissão de token. Por isso
+ * "Verificar novamente" chama refreshSession() para forçar um novo token —
+ * se o cargo mudou, o onAuthStateChange já registrado em App.jsx reconstrói
+ * currentUser sozinho e troca de tela automaticamente.
  */
 export default function PendingApproval({ userEmail, onLogout }) {
+  const [checking, setChecking] = useState(false);
+  const [feedback, setFeedback] = useState(null); // { type: 'info' | 'error', text }
+
+  const handleCheckAgain = async () => {
+    if (checking || !supabase) return;
+    setChecking(true);
+    setFeedback(null);
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) throw error;
+
+      const newRole = getRoleFromSession(data?.session);
+      if (newRole && newRole !== ROLES.PENDENTE) {
+        // Sucesso: o onAuthStateChange do App.jsx já reconstrói currentUser
+        // a partir da nova sessão e troca de tela sozinho — este componente
+        // será desmontado, não precisamos navegar manualmente.
+        return;
+      }
+      setFeedback({ type: 'info', text: 'Ainda aguardando aprovação. Tente novamente em instantes.' });
+    } catch (err) {
+      console.error('[Reflow] Erro ao verificar aprovação:', err);
+      // Se o refresh token estava realmente expirado, o próprio client do
+      // Supabase já disparou SIGNED_OUT (pego pelo onAuthStateChange em
+      // App.jsx) e a tela troca para o Login sozinha. Esta mensagem cobre o
+      // caso em que a sessão local ainda é válida (ex.: falha de rede).
+      setFeedback({ type: 'error', text: 'Não foi possível verificar sua sessão agora. Verifique sua conexão e tente novamente, ou saia e faça login novamente.' });
+    } finally {
+      setChecking(false);
+    }
+  };
+
   return (
     <div style={{
       width: '100vw',
@@ -58,19 +98,63 @@ export default function PendingApproval({ userEmail, onLogout }) {
           {userEmail}
         </div>
 
-        <button
-          onClick={onLogout}
-          style={{
-            marginTop: '1.75rem',
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
-            background: 'none', border: 'none', color: '#b91c1c',
-            fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', padding: '0.4rem'
-          }}
-        >
-          <LogOut size={15} />
-          Sair da Conta
-        </button>
+        <div style={{
+          marginTop: '1.75rem', display: 'flex', gap: '0.75rem',
+          flexWrap: 'wrap', justifyContent: 'center', width: '100%'
+        }}>
+          <button
+            onClick={handleCheckAgain}
+            disabled={checking}
+            className="btn-primary"
+            style={{
+              flex: '1 1 auto', minWidth: '180px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              opacity: checking ? 0.7 : 1,
+              cursor: checking ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {checking ? (
+              <div style={{
+                width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.4)',
+                borderTopColor: '#ffffff', borderRadius: '50%', animation: 'spin 0.8s linear infinite'
+              }} />
+            ) : (
+              <RefreshCw size={15} />
+            )}
+            {checking ? 'Verificando...' : 'Verificar novamente'}
+          </button>
+
+          <button
+            onClick={onLogout}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              background: 'none', border: 'none', color: '#b91c1c',
+              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', padding: '0.4rem 0.75rem'
+            }}
+          >
+            <LogOut size={15} />
+            Sair da Conta
+          </button>
+        </div>
+
+        {feedback && (
+          <div style={{
+            marginTop: '1rem', width: '100%', display: 'flex', alignItems: 'flex-start', gap: '0.5rem',
+            padding: '0.65rem 0.85rem', borderRadius: '8px', fontSize: '0.8rem', textAlign: 'left',
+            backgroundColor: feedback.type === 'error' ? '#fef2f2' : '#fef3c7',
+            border: `1px solid ${feedback.type === 'error' ? '#fecaca' : '#fde68a'}`,
+            color: feedback.type === 'error' ? '#b91c1c' : '#92400e',
+            boxSizing: 'border-box'
+          }}>
+            <AlertCircle size={14} style={{ flexShrink: 0, marginTop: '1px' }} />
+            <span>{feedback.text}</span>
+          </div>
+        )}
       </div>
+
+      <style>{`
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }
