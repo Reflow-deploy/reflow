@@ -28,15 +28,18 @@ export default function SpaceDrawer({
   isAdmin = false,
   onUpdateSpaceFeatures = () => {}
 }) {
+  // Todos os hooks precisam vir ANTES de qualquer return condicional (Regras
+  // de Hooks do React) — o componente já violava isso antes desta mudança
+  // (o "if (!space) return null" vinha antes dos hooks abaixo), o que não
+  // travava visivelmente porque a checagem de dev do React (que avisa sobre
+  // hook count mudando entre renders) não existe no build de produção; o
+  // efeito real ainda acontecia (corrupção de estado), só sem aviso. Ao
+  // adicionar useIsMobile(), a contagem de hooks mudou o suficiente pra virar
+  // um crash visível (tela branca) ao clicar numa sala. Corrigindo aqui.
   const isMobile = useIsMobile();
-  if (!space) return null;
-
-  const isMaintenance = space.status === 'MANUTENCAO';
-  const isOccupied = space.status === 'OCUPADO';
-
   const [isEditing, setIsEditing] = useState(false);
-  const [equipments, setEquipments] = useState(space.equipments || ['Projetor', 'Ar-condicionado', 'Lousa Digital']);
-  const [deskType, setDeskType] = useState(space.deskType || 'Individual');
+  const [equipments, setEquipments] = useState(space?.equipments || ['Projetor', 'Ar-condicionado', 'Lousa Digital']);
+  const [deskType, setDeskType] = useState(space?.deskType || 'Individual');
 
   useEffect(() => {
     if (space) {
@@ -45,6 +48,11 @@ export default function SpaceDrawer({
       setIsEditing(false);
     }
   }, [space]);
+
+  if (!space) return null;
+
+  const isMaintenance = space.status === 'MANUTENCAO';
+  const isOccupied = space.status === 'OCUPADO';
 
   const handleToggleEquipment = (item) => {
     if (equipments.includes(item)) {
