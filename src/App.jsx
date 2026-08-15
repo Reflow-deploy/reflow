@@ -526,16 +526,27 @@ Status Atual: ABERTO`
     }
 
     if (succeeded.length > 0) {
+      // Só marca a sala como OCUPADO (status "cru", usado como fallback pra
+      // hoje em getRealTimeStatus) se alguma das ocorrências criadas for de
+      // HOJE — uma reserva pra uma data futura não deve marcar a sala como
+      // ocupada agora; o status por data/hora selecionada já é recalculado
+      // corretamente a partir de scheduleToday em spacesWithRealTimeStatus.
+      const hasTodayOccurrence = succeeded.some(a => a.spaceId === spaceId && a.date === todayDateString());
+
       setSpaces(prevSpaces => prevSpaces.map(sp => {
         if (sp.id !== spaceId) return sp;
         const newForThisSpace = succeeded.filter(a => a.spaceId === spaceId);
-        return { ...sp, status: 'OCUPADO', scheduleToday: [...(sp.scheduleToday || []), ...newForThisSpace] };
+        return {
+          ...sp,
+          ...(hasTodayOccurrence ? { status: 'OCUPADO' } : {}),
+          scheduleToday: [...(sp.scheduleToday || []), ...newForThisSpace]
+        };
       }));
 
       if (selectedSpace && selectedSpace.id === spaceId) {
         setSelectedSpace(prev => ({
           ...prev,
-          status: 'OCUPADO',
+          ...(hasTodayOccurrence ? { status: 'OCUPADO' } : {}),
           scheduleToday: [...(prev.scheduleToday || []), ...succeeded]
         }));
       }
@@ -563,11 +574,16 @@ Status Atual: ABERTO`
       return;
     }
 
+    // status "cru" (fallback pra hoje em getRealTimeStatus) só deve
+    // considerar alocações de HOJE que sobraram — uma reserva futura
+    // remanescente não deve manter a sala marcada como ocupada hoje.
+    const todayStr = todayDateString();
+
     setSpaces(prevSpaces => prevSpaces.map(sp => {
       if (sp.id === spaceId) {
         const updatedSchedule = (sp.scheduleToday || []).filter(a => a.id !== allocationId);
-        const newStatus = updatedSchedule.length > 0 ? 'OCUPADO' : 'LIVRE';
-        return { ...sp, status: newStatus, scheduleToday: updatedSchedule };
+        const hasTodayLeft = updatedSchedule.some(a => (a.date || todayStr) === todayStr);
+        return { ...sp, status: hasTodayLeft ? 'OCUPADO' : 'LIVRE', scheduleToday: updatedSchedule };
       }
       return sp;
     }));
@@ -575,10 +591,10 @@ Status Atual: ABERTO`
     if (selectedSpace && selectedSpace.id === spaceId) {
       setSelectedSpace(prev => {
         const updatedSchedule = (prev.scheduleToday || []).filter(a => a.id !== allocationId);
-        const newStatus = updatedSchedule.length > 0 ? 'OCUPADO' : 'LIVRE';
+        const hasTodayLeft = updatedSchedule.some(a => (a.date || todayStr) === todayStr);
         return {
           ...prev,
-          status: newStatus,
+          status: hasTodayLeft ? 'OCUPADO' : 'LIVRE',
           scheduleToday: updatedSchedule
         };
       });
@@ -599,18 +615,22 @@ Status Atual: ABERTO`
       return;
     }
 
+    // Mesmo cuidado de handleCancelReservation: só considera alocações de
+    // HOJE remanescentes pra decidir o status "cru" da sala.
+    const todayStr = todayDateString();
+
     setSpaces(prevSpaces => prevSpaces.map(sp => {
       if (!affectedSpaceIds.includes(sp.id)) return sp;
       const updatedSchedule = (sp.scheduleToday || []).filter(a => a.seriesId !== seriesId);
-      const newStatus = updatedSchedule.length > 0 ? 'OCUPADO' : 'LIVRE';
-      return { ...sp, status: newStatus, scheduleToday: updatedSchedule };
+      const hasTodayLeft = updatedSchedule.some(a => (a.date || todayStr) === todayStr);
+      return { ...sp, status: hasTodayLeft ? 'OCUPADO' : 'LIVRE', scheduleToday: updatedSchedule };
     }));
 
     if (selectedSpace && affectedSpaceIds.includes(selectedSpace.id)) {
       setSelectedSpace(prev => {
         const updatedSchedule = (prev.scheduleToday || []).filter(a => a.seriesId !== seriesId);
-        const newStatus = updatedSchedule.length > 0 ? 'OCUPADO' : 'LIVRE';
-        return { ...prev, status: newStatus, scheduleToday: updatedSchedule };
+        const hasTodayLeft = updatedSchedule.some(a => (a.date || todayStr) === todayStr);
+        return { ...prev, status: hasTodayLeft ? 'OCUPADO' : 'LIVRE', scheduleToday: updatedSchedule };
       });
     }
 

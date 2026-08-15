@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { DEFAULT_SPACES, DEFAULT_COLLABORATORS, DEFAULT_CLASSES } from './defaultData';
+import { todayDateString } from '../utils/spaceStatus';
 
 /**
  * Carrega os dados iniciais do Supabase ou usa os dados padrão (fallback) caso o banco esteja vazio ou inacessível.
@@ -271,7 +272,15 @@ export async function dbAddAllocation(allocData) {
     throw error;
   }
 
-  await supabase.from('spaces').update({ status: 'OCUPADO' }).eq('id', String(allocData.spaceId));
+  // O campo spaces.status é um flag manual/legado (também usado pra
+  // "OCUPADO"/"MANUTENÇÃO" definidos à mão em ModalEditSpace) — só faz
+  // sentido gravar OCUPADO aqui quando a alocação é de HOJE. Uma reserva
+  // pra uma data futura não deve marcar a sala como ocupada hoje; o status
+  // em tempo real por data/hora já é calculado corretamente no frontend
+  // (getRealTimeStatus, em src/utils/spaceStatus.js).
+  if (allocData.date === todayDateString()) {
+    await supabase.from('spaces').update({ status: 'OCUPADO' }).eq('id', String(allocData.spaceId));
+  }
 }
 
 export async function dbDeleteAllocation(allocId, spaceId) {
@@ -280,7 +289,14 @@ export async function dbDeleteAllocation(allocId, spaceId) {
   if (error) throw error;
 
   if (spaceId) {
-    const { data: remaining } = await supabase.from('allocations').select('*').eq('space_id', String(spaceId));
+    // Só considera alocações de HOJE pra decidir se a sala volta a LIVRE —
+    // uma alocação futura remanescente não deve manter a sala marcada
+    // como ocupada no dia de hoje.
+    const { data: remaining } = await supabase
+      .from('allocations')
+      .select('id')
+      .eq('space_id', String(spaceId))
+      .eq('date', todayDateString());
     if (!remaining || remaining.length === 0) {
       await supabase.from('spaces').update({ status: 'LIVRE' }).eq('id', String(spaceId));
     }
@@ -299,7 +315,13 @@ export async function dbDeleteAllocationSeries(seriesId, spaceIdsToRelease) {
   if (error) throw error;
 
   for (const spaceId of (spaceIdsToRelease || [])) {
-    const { data: remaining } = await supabase.from('allocations').select('id').eq('space_id', String(spaceId));
+    // Só considera alocações de HOJE — ver comentário equivalente em
+    // dbDeleteAllocation.
+    const { data: remaining } = await supabase
+      .from('allocations')
+      .select('id')
+      .eq('space_id', String(spaceId))
+      .eq('date', todayDateString());
     if (!remaining || remaining.length === 0) {
       await supabase.from('spaces').update({ status: 'LIVRE' }).eq('id', String(spaceId));
     }
@@ -573,12 +595,15 @@ export async function dbReleaseExpiredAllocations(expiredAllocIds, spaceIdsToRel
       await supabase.from('allocations').delete().eq('id', String(allocId));
     }
 
-    // 2. Para cada espaço, verifica se ainda tem alocações restantes
+    // 2. Para cada espaço, verifica se ainda tem alocações restantes HOJE
+    //    (uma alocação futura remanescente não deve manter a sala ocupada
+    //    hoje — ver comentário equivalente em dbDeleteAllocation)
     for (const spaceId of spaceIdsToRelease) {
       const { data: remaining } = await supabase
         .from('allocations')
         .select('id')
-        .eq('space_id', String(spaceId));
+        .eq('space_id', String(spaceId))
+        .eq('date', todayDateString());
 
       if (!remaining || remaining.length === 0) {
         await supabase.from('spaces').update({ status: 'LIVRE' }).eq('id', String(spaceId));
