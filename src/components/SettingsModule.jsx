@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, BookOpen, Calendar, Plus, Search, Edit3, Trash2, Clock, Mail, Phone, Check, MapPin, BookMarked, AlertCircle, Cpu, LayoutGrid, ShieldCheck, Hourglass, Link2 } from 'lucide-react';
 import { getRealTimeStatus, nowInMinutes, timeToMinutes, todayDateString } from '../utils/spaceStatus';
 import { ROLES } from '../utils/permissions';
 import ModalEditSpace from './modals/ModalEditSpace';
+import AdminAuditView from './AdminAuditView';
 
 const ASSIGNABLE_ROLES = [ROLES.PENDENTE, ROLES.PROFESSOR, ROLES.DIRECAO, ROLES.SUPORTE, ROLES.ADMIN];
 
@@ -19,9 +20,12 @@ export default function SettingsModule({
   spaces = [],
   currentUser = {},
   onUpdateSpace = () => { },
-  onUpdateCollaboratorRole = () => { }
+  onUpdateCollaboratorRole = () => { },
+  adminAuditLog = [],
+  adminAuditLogLoading = false,
+  onLoadAuditLog = () => { }
 }) {
-  const [subTab, setSubTab] = useState('RESERVATIONS'); // RESERVATIONS | CLASSES | PROFESSIONALS | SPACES
+  const [subTab, setSubTab] = useState('RESERVATIONS'); // RESERVATIONS | CLASSES | PROFESSIONALS | SPACES | AUDIT
   const [classSubView, setClassSubView] = useState('CLASSES_LIST'); // CLASSES_LIST | WEEKLY_GRID
   const [searchCollaborator, setSearchCollaborator] = useState('');
   const [searchSpace, setSearchSpace] = useState('');
@@ -35,6 +39,13 @@ export default function SettingsModule({
   // Trocar o cargo do sistema (acesso) é ainda mais restrito: só
   // Administrador (bate com is_admin() no banco — Direção não passa).
   const isSuperAdmin = currentUser?.role === ROLES.ADMIN;
+
+  // Lazy-load do log de auditoria administrativa — só busca quando o Admin
+  // de fato abre a aba (RLS já restringiria a leitura pra qualquer outro
+  // cargo, mas nem faz sentido pedir se a aba nem aparece pra eles).
+  useEffect(() => {
+    if (subTab === 'AUDIT' && isSuperAdmin) onLoadAuditLog();
+  }, [subTab, isSuperAdmin]);
 
   const filteredCollaborators = collaborators.filter((col) => {
     const matchesSearch = searchCollaborator === '' ||
@@ -150,8 +161,39 @@ export default function SettingsModule({
           >
             Salas
           </button>
+
+          {isSuperAdmin && (
+            <button
+              onClick={() => setSubTab('AUDIT')}
+              style={{
+                padding: '0.45rem 0.9rem',
+                borderRadius: '0.375rem',
+                border: 'none',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                backgroundColor: subTab === 'AUDIT' ? '#0b2238' : 'transparent',
+                color: subTab === 'AUDIT' ? '#ffffff' : '#64748b'
+              }}
+            >
+              <ShieldCheck size={14} />
+              Auditoria
+            </button>
+          )}
         </div>
       </div>
+
+      {/* VIEW: AUDITORIA ADMINISTRATIVA (só Administrador) */}
+      {subTab === 'AUDIT' && isSuperAdmin && (
+        <AdminAuditView
+          logs={adminAuditLog}
+          loading={adminAuditLogLoading}
+          collaborators={collaborators}
+        />
+      )}
 
       {/* VIEW: SALAS */}
       {subTab === 'SPACES' && (

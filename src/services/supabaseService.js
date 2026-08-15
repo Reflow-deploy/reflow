@@ -483,6 +483,38 @@ export async function dbClearHistory() {
   if (auditError) throw auditError;
 }
 
+/**
+ * Busca o log de auditoria administrativa (troca de cargo, exclusão de
+ * ocorrência, edição/exclusão de sala). Populado só por triggers
+ * SECURITY DEFINER no banco (nunca por insert daqui) — ver migration
+ * 20260815000000_admin_audit_log.sql. RLS restringe o SELECT a is_admin(),
+ * então para qualquer outro cargo a query volta vazia, sem erro. Não faz
+ * parte de "Limpar Histórico" — é imutável por design.
+ */
+export async function dbGetAdminAuditLog(limit = 200) {
+  if (!isSupabaseConfigured()) return [];
+  const { data, error } = await supabase
+    .from('admin_audit_log')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.error('[Reflow] Erro ao buscar log de auditoria administrativa:', error);
+    return [];
+  }
+  return (data || []).map(l => ({
+    id: l.id,
+    actorUserId: l.actor_user_id,
+    action: l.action,
+    targetTable: l.target_table,
+    targetId: l.target_id,
+    targetLabel: l.target_label,
+    oldData: l.old_data,
+    newData: l.new_data,
+    createdAt: l.created_at
+  }));
+}
+
 // -------------------------------------------------------------
 // LIBERAÇÃO AUTOMÁTICA DE SALAS (Alocações Expiradas)
 // -------------------------------------------------------------

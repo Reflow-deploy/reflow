@@ -35,7 +35,8 @@ import {
   dbUpdateSpace,
   dbUpdateClass,
   dbReleaseExpiredAllocations,
-  dbCheckCollaboratorExists
+  dbCheckCollaboratorExists,
+  dbGetAdminAuditLog
 } from './services/supabaseService';
 import { eventService, EVENTS } from './services/eventService';
 import { sendOccurrenceEmail } from './services/gmailService';
@@ -134,6 +135,8 @@ export default function App() {
   const [weeklySchedule, setWeeklySchedule] = useState({});
   const [occurrences, setOccurrences] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [adminAuditLog, setAdminAuditLog] = useState([]);
+  const [adminAuditLogLoading, setAdminAuditLogLoading] = useState(false);
 
   const [selectedSpace, setSelectedSpace] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -170,6 +173,15 @@ export default function App() {
       showToast('Não foi possível atualizar o cargo. Tente novamente.');
     }
   };
+
+  // 🛡️ Log de auditoria administrativa — só Administrador enxerga (RLS já
+  // restringe o SELECT a is_admin(), aqui é só lazy-load ao abrir a aba).
+  const handleLoadAdminAuditLog = useCallback(async () => {
+    setAdminAuditLogLoading(true);
+    const rows = await dbGetAdminAuditLog();
+    setAdminAuditLog(rows);
+    setAdminAuditLogLoading(false);
+  }, []);
 
   // 🔄 Carrega os dados iniciais do Supabase se configurado
   useEffect(() => {
@@ -877,6 +889,9 @@ Status Atual: ABERTO`
               currentUser={currentUser}
               onUpdateSpace={handleUpdateSpace}
               onUpdateCollaboratorRole={handleUpdateCollaboratorRole}
+              adminAuditLog={adminAuditLog}
+              adminAuditLogLoading={adminAuditLogLoading}
+              onLoadAuditLog={handleLoadAdminAuditLog}
             />
           )}
         </main>
