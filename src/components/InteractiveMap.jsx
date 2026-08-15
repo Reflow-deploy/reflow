@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar, Search, X, Sparkles, Filter } from 'lucide-react';
 import SchoolMap from './SchoolMap';
+import { useIsMobile } from '../utils/useIsMobile';
 
 const QUICK_FILTERS = [
   { label: '✨ Todos', query: '' },
@@ -65,6 +66,7 @@ export function checkSpaceMatchesQuery(space, query) {
 }
 
 export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace, searchQuery, setSearchQuery, selectedDate, setSelectedDate }) {
+  const isMobile = useIsMobile();
   const hasSearchActive = searchQuery && searchQuery.trim() !== '';
   
   // Encontra todas as salas que correspondem à busca
@@ -222,14 +224,27 @@ export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace
         </div>
 
         {/* 3D Isometric SVG Map Canvas */}
-        <div style={{ position: 'relative', width: '100%', minHeight: '440px' }}>
-          <SchoolMap
-            spaces={spaces}
-            selectedSpaceId={selectedSpace?.id}
-            onSpaceSelect={setSelectedSpace}
-            matchingSpaceIds={matchingSpaceIds}
-            hasSearchActive={hasSearchActive}
-          />
+        <div style={{
+          position: 'relative',
+          width: '100%',
+          minHeight: '440px',
+          overflowX: isMobile ? 'auto' : 'visible',
+          WebkitOverflowScrolling: 'touch'
+        }}>
+          {/* Em mobile, o SVG não pode encolher abaixo de uma largura
+              legível — em vez de deixar width:100% (CSS) minimizar o mapa
+              inteiro até caber na tela (o que miniaturiza demais o texto
+              dos foreignObject de cada sala), forçamos uma largura mínima
+              e deixamos o container acima rolar horizontalmente por toque. */}
+          <div style={{ minWidth: isMobile ? '900px' : '100%' }}>
+            <SchoolMap
+              spaces={spaces}
+              selectedSpaceId={selectedSpace?.id}
+              onSpaceSelect={setSelectedSpace}
+              matchingSpaceIds={matchingSpaceIds}
+              hasSearchActive={hasSearchActive}
+            />
+          </div>
         </div>
       </div>
     </div>

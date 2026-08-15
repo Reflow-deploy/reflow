@@ -223,7 +223,7 @@ export default function SettingsModule({
           </div>
 
           {/* Spaces Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '1.25rem' }}>
             {filteredSpaces.map(sp => (
               <div key={sp.id} style={{
                 backgroundColor: '#ffffff',
@@ -381,7 +381,7 @@ export default function SettingsModule({
           </div>
 
           {/* Grid de Colaboradores */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '1.25rem' }}>
             {filteredCollaborators.map((col) => {
               const isPendingAccess = isSuperAdmin && col.systemRole === ROLES.PENDENTE;
               const isSelfAccount = col.email?.toLowerCase() === currentUser?.email?.toLowerCase();
@@ -597,7 +597,7 @@ export default function SettingsModule({
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))', gap: '1.25rem' }}>
             {classes.map((cls) => (
               <div
                 key={cls.id}
@@ -764,7 +764,7 @@ export default function SettingsModule({
                 {active.length > 0 && (
                   <div>
                     <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#15803d', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>EM ANDAMENTO AGORA</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: '1rem' }}>
                       {active.map(r => <ReservationCard key={r.id} r={r} highlight="active" />)}
                     </div>
                   </div>
@@ -773,7 +773,7 @@ export default function SettingsModule({
                 {upcoming.length > 0 && (
                   <div>
                     <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#1d4ed8', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>PRÓXIMAS RESERVAS</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: '1rem' }}>
                       {upcoming.map(r => <ReservationCard key={r.id} r={r} highlight="upcoming" />)}
                     </div>
                   </div>
@@ -782,7 +782,7 @@ export default function SettingsModule({
                 {past.length > 0 && (
                   <div>
                     <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>CONCLUÍDAS HOJE</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: '1rem' }}>
                       {past.map(r => <ReservationCard key={r.id} r={r} highlight="past" />)}
                     </div>
                   </div>

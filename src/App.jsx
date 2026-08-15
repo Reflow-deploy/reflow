@@ -42,6 +42,7 @@ import { eventService, EVENTS } from './services/eventService';
 import { sendOccurrenceEmail } from './services/gmailService';
 import { getAllowedTabs, ROLES } from './utils/permissions';
 import { getRoleFromSession } from './utils/jwt';
+import { useIsMobile } from './utils/useIsMobile';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -142,6 +143,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState(todayDateString());
   const [toastMessage, setToastMessage] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const isMobile = useIsMobile();
   const [logoutReason, setLogoutReason] = useState(null);
   const [, setTick] = useState(0);
 
@@ -813,6 +816,8 @@ Status Atual: ABERTO`
         onLogout={handleLogout}
         currentUser={currentUser}
         onUpdateUser={handleUpdateUser}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
 
       {/* Main Content Area */}
@@ -827,10 +832,12 @@ Status Atual: ABERTO`
             showToast(`Buscando por: "${q}"`);
           }}
           currentUser={currentUser}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen(o => !o)}
         />
 
         {/* Dynamic Views */}
-        <main style={{ flex: 1, display: 'flex', marginLeft: '260px', position: 'relative' }}>
+        <main style={{ flex: 1, display: 'flex', marginLeft: isMobile ? 0 : '260px', position: 'relative' }}>
           {activeTab === 'map' && (
             <>
               <InteractiveMap
@@ -951,7 +958,8 @@ Status Atual: ABERTO`
         <div className="animate-fade-in" style={{
           position: 'fixed',
           bottom: '2rem',
-          left: '280px',
+          left: isMobile ? '1rem' : '280px',
+          right: isMobile ? '1rem' : 'auto',
           backgroundColor: '#0b2238',
           color: '#ffffff',
           fontWeight: 600,

@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Map, Calendar, AlertTriangle, Settings, LogOut, ChevronDown } from 'lucide-react';
 import ModalProfile from './modals/ModalProfile';
 import { getAllowedTabs } from '../utils/permissions';
+import { useIsMobile } from '../utils/useIsMobile';
 
-export default function Sidebar({ activeTab, setActiveTab, spacesCount, occupiedCount, occurrencesCount = 0, onLogout, currentUser, onUpdateUser }) {
+export default function Sidebar({ activeTab, setActiveTab, spacesCount, occupiedCount, occurrencesCount = 0, onLogout, currentUser, onUpdateUser, isOpen = false, onClose = () => {} }) {
+  const isMobile = useIsMobile();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const freeCount = spacesCount - occupiedCount;
@@ -17,6 +19,12 @@ export default function Sidebar({ activeTab, setActiveTab, spacesCount, occupied
 
   return (
     <>
+    {isMobile && isOpen && (
+      <div
+        onClick={onClose}
+        style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 49 }}
+      />
+    )}
     <aside style={{
       width: '260px',
       height: '100vh',
@@ -28,7 +36,10 @@ export default function Sidebar({ activeTab, setActiveTab, spacesCount, occupied
       position: 'fixed',
       left: 0,
       top: 0,
-      zIndex: 50
+      zIndex: 50,
+      transform: isMobile ? (isOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
+      transition: 'transform 0.25s ease',
+      boxShadow: isMobile && isOpen ? '4px 0 16px rgba(0,0,0,0.15)' : 'none'
     }}>
       <div>
         {/* Brand Logo Header */}
@@ -48,7 +59,7 @@ export default function Sidebar({ activeTab, setActiveTab, spacesCount, occupied
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => { setActiveTab(item.id); if (isMobile) onClose(); }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',

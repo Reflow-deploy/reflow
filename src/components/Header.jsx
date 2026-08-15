@@ -1,7 +1,9 @@
 import React from 'react';
-import { Search } from 'lucide-react';
+import { Search, Menu } from 'lucide-react';
+import { useIsMobile } from '../utils/useIsMobile';
 
-export default function Header({ searchQuery, setSearchQuery, onSearchSubmit, showSearch = true }) {
+export default function Header({ searchQuery, setSearchQuery, onSearchSubmit, showSearch = true, isSidebarOpen, onToggleSidebar = () => {} }) {
+  const isMobile = useIsMobile();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -15,15 +17,35 @@ export default function Header({ searchQuery, setSearchQuery, onSearchSubmit, sh
       borderBottom: '1px solid #e2e8f0',
       display: 'flex',
       alignItems: 'center',
-      padding: '0 2rem',
+      gap: '0.75rem',
+      padding: isMobile ? '0 1rem' : '0 2rem',
       position: 'sticky',
       top: 0,
       zIndex: 40,
-      marginLeft: '260px'
+      marginLeft: isMobile ? 0 : '260px'
     }}>
+      {/* Botão hambúrguer — abre/fecha o drawer da Sidebar em mobile */}
+      {isMobile && (
+        <button
+          onClick={onToggleSidebar}
+          aria-label={isSidebarOpen ? 'Fechar menu' : 'Abrir menu'}
+          style={{
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            color: '#0f2942',
+            padding: '0.4rem',
+            display: 'flex',
+            flexShrink: 0
+          }}
+        >
+          <Menu size={22} />
+        </button>
+      )}
+
       {/* Global Search Bar - Visível apenas na aba Mapa Interativo */}
       {showSearch ? (
-        <form onSubmit={handleSubmit} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, maxWidth: '520px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, maxWidth: isMobile ? 'none' : '520px' }}>
           <div style={{
             position: 'relative',
             width: '100%',
@@ -72,4 +94,3 @@ export default function Header({ searchQuery, setSearchQuery, onSearchSubmit, sh
     </header>
   );
 }
-

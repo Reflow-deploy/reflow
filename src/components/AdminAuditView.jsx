@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ShieldCheck, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
+import { useIsMobile } from '../utils/useIsMobile';
 
 const ACTION_LABELS = {
   ROLE_CHANGE: 'Troca de Cargo',
@@ -58,6 +59,7 @@ function formatDateTime(iso) {
 }
 
 export default function AdminAuditView({ logs = [], loading = false, collaborators = [] }) {
+  const isMobile = useIsMobile();
   const [sortDir, setSortDir] = useState('desc'); // asc | desc — por data/hora
 
   const sortedLogs = useMemo(() => {
@@ -94,6 +96,54 @@ export default function AdminAuditView({ logs = [], loading = false, collaborato
           <ShieldCheck size={52} color="#94a3b8" style={{ margin: '0 auto 1rem auto' }} />
           <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#334155' }}>Nenhuma ação administrativa registrada ainda.</h3>
           <p style={{ fontSize: '0.875rem' }}>Trocas de cargo, exclusões de ocorrência e mudanças de sala vão aparecer aqui automaticamente.</p>
+        </div>
+      ) : isMobile ? (
+        // Em telas <768px, o grid de 4 colunas (150/160/160px + 1fr = 470px
+        // fixos) não cabe — vira uma lista de cards empilhados, reaproveitando
+        // toda a lógica de formatação acima sem alteração.
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <button
+            onClick={() => setSortDir(d => (d === 'asc' ? 'desc' : 'asc'))}
+            style={{
+              alignSelf: 'flex-start', background: 'none', border: '1px solid #e2e8f0',
+              borderRadius: '0.375rem', padding: '0.4rem 0.7rem', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '0.3rem',
+              fontSize: '0.75rem', fontWeight: 700, color: '#64748b'
+            }}
+          >
+            Data/Hora
+            {sortDir === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          </button>
+
+          {sortedLogs.map(log => (
+            <details key={log.id} style={{
+              border: '1px solid #e2e8f0', borderRadius: '0.5rem',
+              backgroundColor: '#ffffff', padding: '0.75rem'
+            }}>
+              <summary style={{ cursor: 'pointer', fontSize: '0.8rem', color: '#334155', listStyle: 'none' }}>
+                <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '0.3rem', verticalAlign: 'top' }}>
+                  <span><strong style={{ color: '#64748b' }}>Data/Hora:</strong> {formatDateTime(log.createdAt)}</span>
+                  <span><strong style={{ color: '#64748b' }}>Ator:</strong> {resolveActorName(log, collaborators)}</span>
+                  <span><strong style={{ color: '#64748b' }}>Ação:</strong> {ACTION_LABELS[log.action] || log.action}</span>
+                  <span style={{ color: '#475569' }}><strong style={{ color: '#64748b' }}>Antes → Depois:</strong> {formatChange(log)}</span>
+                </div>
+              </summary>
+              <div style={{
+                marginTop: '0.6rem', paddingTop: '0.6rem', borderTop: '1px solid #f1f5f9',
+                fontSize: '0.75rem', color: '#475569'
+              }}>
+                <div style={{ marginBottom: '0.35rem', fontWeight: 600 }}>Alvo: {log.targetLabel || log.targetId} ({log.targetTable})</div>
+                <pre style={{
+                  margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                  backgroundColor: '#f8fafc', border: '1px solid #e2e8f0',
+                  borderRadius: '0.375rem', padding: '0.5rem 0.65rem',
+                  fontFamily: "'JetBrains Mono', monospace"
+                }}>
+                  {JSON.stringify({ old: log.oldData, new: log.newData }, null, 2)}
+                </pre>
+              </div>
+            </details>
+          ))}
         </div>
       ) : (
         <div style={{

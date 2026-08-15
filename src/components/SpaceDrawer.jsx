@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, Clock, Users, Calendar, Trash2, Siren, Cpu, Edit3, Save, Wrench, AlertTriangle } from 'lucide-react';
+import { useIsMobile } from '../utils/useIsMobile';
 
 const AVAILABLE_EQUIPMENTS = [
   'Projetor',
@@ -27,6 +28,7 @@ export default function SpaceDrawer({
   isAdmin = false,
   onUpdateSpaceFeatures = () => {}
 }) {
+  const isMobile = useIsMobile();
   if (!space) return null;
 
   const isMaintenance = space.status === 'MANUTENCAO';
@@ -70,10 +72,10 @@ export default function SpaceDrawer({
 
   return (
     <aside className="animate-slide-in-right" style={{
-      width: '390px',
+      width: isMobile ? '100%' : '390px',
       height: 'calc(100vh - 70px)',
       backgroundColor: '#ffffff',
-      borderLeft: '1px solid #e2e8f0',
+      borderLeft: isMobile ? 'none' : '1px solid #e2e8f0',
       boxShadow: '-4px 0 16px rgba(0, 0, 0, 0.05)',
       position: 'fixed',
       right: 0,

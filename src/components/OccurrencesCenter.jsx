@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Mail, Trash2, CheckCircle2, Clock, ShieldAlert, Send, RefreshCw, RotateCcw, X } from 'lucide-react';
+import { AlertTriangle, Mail, Trash2, CheckCircle2, Clock, ShieldAlert, Send, RefreshCw, RotateCcw, X, ChevronLeft } from 'lucide-react';
 import { ROLES } from '../utils/permissions';
+import { useIsMobile } from '../utils/useIsMobile';
 
 export default function OccurrencesCenter({
   occurrences = [],
@@ -11,6 +12,7 @@ export default function OccurrencesCenter({
   onDeleteOccurrence = () => {},
   onResendEmail = () => {}
 }) {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('LIST'); // LIST | AUDIT
   const [filterDept, setFilterDept] = useState('ALL');
   const [filterStatus, setFilterStatus] = useState('ABERTO'); // ABERTO | RESOLVIDO | ALL
@@ -281,6 +283,7 @@ export default function OccurrencesCenter({
                     display: 'flex',
                     alignItems: 'flex-start',
                     justifyContent: 'space-between',
+                    flexWrap: 'wrap',
                     gap: '1rem'
                   }}>
                     <div>
@@ -388,10 +391,12 @@ export default function OccurrencesCenter({
       {/* VIEW: E-mail Audit Log (Gmail API Logs) */}
       {activeTab === 'AUDIT' && (
         <div className="card-reflow" style={{ padding: '1.5rem', minHeight: '480px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: '1.5rem' }}>
-            
-            {/* Sent Mail List */}
-            <div style={{ borderRight: '1px solid #f1f5f9', paddingRight: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '340px 1fr', gap: '1.5rem' }}>
+
+            {/* Sent Mail List — em mobile, some assim que um item é selecionado
+                (mostra só o detalhe + botão Voltar) */}
+            {(!isMobile || !selectedAuditLog) && (
+            <div style={{ borderRight: isMobile ? 'none' : '1px solid #f1f5f9', paddingRight: isMobile ? 0 : '1rem' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.05em', marginBottom: '1rem' }}>
                 Mensagens Disparadas via API Gmail ({auditLogs.length})
               </div>
@@ -463,9 +468,25 @@ export default function OccurrencesCenter({
                 </div>
               )}
             </div>
+            )}
 
-            {/* Email Inspector Detail View */}
+            {/* Email Inspector Detail View — em mobile, só aparece após
+                selecionar um item da lista */}
+            {(!isMobile || selectedAuditLog) && (
             <div>
+              {isMobile && selectedAuditLog && (
+                <button
+                  onClick={() => setSelectedAuditLog(null)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.3rem',
+                    border: 'none', background: 'none', color: '#0369a1',
+                    fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
+                    marginBottom: '0.75rem', padding: 0
+                  }}
+                >
+                  <ChevronLeft size={16} /> Voltar para a lista
+                </button>
+              )}
               {activeLog ? (
                 <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '0.5rem', padding: '1.25rem' }}>
                   <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -526,6 +547,7 @@ export default function OccurrencesCenter({
                 </div>
               )}
             </div>
+            )}
 
           </div>
         </div>
