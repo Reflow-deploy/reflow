@@ -129,9 +129,16 @@ export default function SpaceDrawer({
           </span>
         </div>
 
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f2942', marginBottom: '1rem' }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f2942', marginBottom: '0.35rem' }}>
           {space.name}
         </h2>
+
+        {currentDate && (
+          <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <Clock size={13} color="#94a3b8" />
+            Situação em: {currentDate}
+          </div>
+        )}
 
         {/* Status Indicator Banner */}
         {isMaintenance ? (

@@ -1,7 +1,17 @@
 import React from 'react';
-import { Calendar, Search, X, Sparkles, Filter } from 'lucide-react';
+import { Calendar, Search, X, Sparkles, Filter, Clock, RotateCcw } from 'lucide-react';
 import SchoolMap from './SchoolMap';
 import { useIsMobile } from '../utils/useIsMobile';
+import { todayDateString } from '../utils/spaceStatus';
+
+// Reformatação pura de "YYYY-MM-DD" -> "DD/MM/YYYY" (mesmo helper de
+// App.jsx, replicado aqui — pequena duplicação já aceita no projeto pra
+// helpers puros de data, evita subir mais uma prop calculada).
+function formatDateBR(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
 
 const QUICK_FILTERS = [
   { label: '✨ Todos', query: '' },
@@ -65,7 +75,7 @@ export function checkSpaceMatchesQuery(space, query) {
   return false;
 }
 
-export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace, searchQuery, setSearchQuery, selectedDate, setSelectedDate }) {
+export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace, searchQuery, setSearchQuery, selectedDate, setSelectedDate, selectedTime, setSelectedTime, onResetToNow }) {
   const isMobile = useIsMobile();
   const hasSearchActive = searchQuery && searchQuery.trim() !== '';
   
@@ -86,29 +96,73 @@ export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace
           </p>
         </div>
 
-        {/* Date Selector */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          backgroundColor: '#ffffff',
-          border: '1px solid #cbd5e1',
-          borderRadius: '0.5rem',
-          padding: '0.45rem 0.9rem',
-          fontSize: '0.85rem',
-          color: '#334155',
-          fontWeight: 600,
-          boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
-        }}>
-          <Calendar size={16} color="#0f2942" />
-          <input 
-            type="date" 
-            value={selectedDate || '2026-05-27'}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            style={{ border: 'none', background: 'transparent', outline: 'none', fontFamily: 'inherit', fontWeight: 600, color: '#0f2942', cursor: 'pointer' }}
-          />
+        {/* Date + Time Selectors */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            backgroundColor: '#ffffff',
+            border: '1px solid #cbd5e1',
+            borderRadius: '0.5rem',
+            padding: '0.45rem 0.9rem',
+            fontSize: '0.85rem',
+            color: '#334155',
+            fontWeight: 600,
+            boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+          }}>
+            <Calendar size={16} color="#0f2942" />
+            <input
+              type="date"
+              value={selectedDate || '2026-05-27'}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              style={{ border: 'none', background: 'transparent', outline: 'none', fontFamily: 'inherit', fontWeight: 600, color: '#0f2942', cursor: 'pointer' }}
+            />
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            backgroundColor: '#ffffff',
+            border: '1px solid #cbd5e1',
+            borderRadius: '0.5rem',
+            padding: '0.45rem 0.9rem',
+            fontSize: '0.85rem',
+            color: '#334155',
+            fontWeight: 600,
+            boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+          }}>
+            <Clock size={16} color="#0f2942" />
+            <input
+              type="time"
+              value={selectedTime || ''}
+              onChange={(e) => setSelectedTime(e.target.value)}
+              style={{ border: 'none', background: 'transparent', outline: 'none', fontFamily: 'inherit', fontWeight: 600, color: '#0f2942', cursor: 'pointer' }}
+            />
+          </div>
+
+          <button
+            onClick={onResetToNow}
+            title="Voltar para a data e hora atuais"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.35rem',
+              backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '0.5rem',
+              padding: '0.45rem 0.8rem', fontSize: '0.8rem', fontWeight: 700, color: '#334155',
+              cursor: 'pointer'
+            }}
+          >
+            <RotateCcw size={14} />
+            Agora
+          </button>
         </div>
       </div>
+
+      {selectedDate !== todayDateString() && (
+        <p style={{ fontSize: '0.78rem', color: '#0369a1', fontWeight: 600, margin: '-0.5rem 0 1rem 0' }}>
+          🕒 Mostrando status para {formatDateBR(selectedDate)} às {selectedTime}
+        </p>
+      )}
 
       {/* Quick Filter Chips (Atalhos Clicáveis de Pesquisa Rápida) */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>

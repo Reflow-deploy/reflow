@@ -63,17 +63,31 @@ function timeToMins(timeStr) {
   return h * 60 + m;
 }
 
-export default function ModalReserveSpace({ space, classes, currentUser, onClose, onConfirm }) {
+export default function ModalReserveSpace({ space, classes, currentUser, onClose, onConfirm, initialDate, initialTime }) {
   if (!space) return null;
 
   const realCurrentTime = getRealCurrentTime();
   const todayDate = new Date().toISOString().split('T')[0];
 
+  // Pré-preenchimento vindo da data/hora selecionada no Mapa Interativo —
+  // só aplicado quando representa "hoje ou futuro", pra nunca abrir o
+  // formulário já com um erro de "data/hora passada".
+  const isInitialDateFuture = initialDate && initialDate > todayDate;
+  const isInitialDateToday = initialDate && initialDate === todayDate;
+  const effectiveInitialDate = (isInitialDateFuture || isInitialDateToday) ? initialDate : todayDate;
+
+  let effectiveInitialTime = realCurrentTime;
+  if (isInitialDateFuture && initialTime) {
+    effectiveInitialTime = initialTime;
+  } else if (isInitialDateToday && initialTime && initialTime >= realCurrentTime) {
+    effectiveInitialTime = initialTime;
+  }
+
   const [selectedClass, setSelectedClass] = useState(classes[0]?.name || '');
-  const [date, setDate] = useState(todayDate);
+  const [date, setDate] = useState(effectiveInitialDate);
   const [studentsCount, setStudentsCount] = useState(30);
-  const [startTime, setStartTime] = useState(realCurrentTime);
-  const [endTime, setEndTime] = useState(getDefaultEndTime(realCurrentTime));
+  const [startTime, setStartTime] = useState(effectiveInitialTime);
+  const [endTime, setEndTime] = useState(getDefaultEndTime(effectiveInitialTime));
   const [errorMsg, setErrorMsg] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrenceEndDate, setRecurrenceEndDate] = useState('');

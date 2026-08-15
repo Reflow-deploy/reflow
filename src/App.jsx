@@ -18,7 +18,7 @@ import ModalAddCollaborator from './components/modals/ModalAddCollaborator';
 import ModalAddClass from './components/modals/ModalAddClass';
 import ModalSeriesResult from './components/modals/ModalSeriesResult';
 
-import { getRealTimeStatus, todayDateString, timeToMinutes, nowInMinutes } from './utils/spaceStatus';
+import { getRealTimeStatus, todayDateString, timeToMinutes, nowInMinutes, nowTimeString } from './utils/spaceStatus';
 import {
   loadInitialData,
   dbAddAllocation,
@@ -45,6 +45,14 @@ import { eventService, EVENTS } from './services/eventService';
 import { sendOccurrenceEmail } from './services/gmailService';
 import { getAllowedTabs, ROLES } from './utils/permissions';
 import { getRoleFromSession } from './utils/jwt';
+
+// Reformatação pura de "YYYY-MM-DD" -> "DD/MM/YYYY", sem passar por
+// new Date() (evita qualquer risco de fuso horário nessa conversão trivial).
+function formatDateBR(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
 
 // occurrence.createdAt agora é ISO 8601 completo (data + hora), não mais só
 // "HH:mm" — formata pro padrão pt-BR pra exibição em e-mail/UI.
@@ -155,6 +163,7 @@ export default function App() {
   const [selectedSpace, setSelectedSpace] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState(todayDateString());
+  const [selectedTime, setSelectedTime] = useState(nowTimeString());
   const [toastMessage, setToastMessage] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -874,9 +883,16 @@ Status Atual: ABERTO`
     return <PendingApproval userEmail={currentUser?.email || session.user?.email} onLogout={handleLogout} />;
   }
 
-  // Calcula espaços com status em tempo real
+  // Volta o seletor de data/hora do mapa pro momento real atual — desfaz o
+  // "congelamento" de selectedTime (ver comentário no useState acima).
+  const handleResetToNow = () => {
+    setSelectedDate(todayDateString());
+    setSelectedTime(nowTimeString());
+  };
+
+  // Calcula espaços com status na data/hora selecionada (padrão: agora)
   const spacesWithRealTimeStatus = spaces.map(sp => {
-    const { status, activeAllocation } = getRealTimeStatus(sp, selectedDate);
+    const { status, activeAllocation } = getRealTimeStatus(sp, selectedDate, selectedTime);
     return { ...sp, status, currentAllocation: activeAllocation };
   });
 
@@ -930,6 +946,9 @@ Status Atual: ABERTO`
                 setSearchQuery={setSearchQuery}
                 selectedDate={selectedDate}
                 setSelectedDate={setSelectedDate}
+                selectedTime={selectedTime}
+                setSelectedTime={setSelectedTime}
+                onResetToNow={handleResetToNow}
               />
               <SpaceDrawer
                 space={selectedSpace ? spacesWithRealTimeStatus.find(s => s.id === selectedSpace.id) : null}
@@ -940,7 +959,7 @@ Status Atual: ABERTO`
                   setReportModalSpaceId(sp.id);
                   setShowReportModal(true);
                 }}
-                currentDate={new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                currentDate={`${formatDateBR(selectedDate)} às ${selectedTime}`}
                 isAdmin={['Administrador', 'Direção'].includes(currentUser?.role)}
                 onUpdateSpaceFeatures={handleUpdateSpaceFeatures}
               />
@@ -1007,6 +1026,8 @@ Status Atual: ABERTO`
           currentUser={currentUser}
           onClose={() => setSpaceToAllocate(null)}
           onConfirm={handleAllocateConfirm}
+          initialDate={selectedDate}
+          initialTime={selectedTime}
         />
       )}
 

@@ -22,7 +22,23 @@ export function todayDateString() {
   return `${y}-${m}-${d}`;
 }
 
-export function getRealTimeStatus(space, selectedDate) {
+export function nowTimeString() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+/**
+ * Calcula o status de uma sala numa combinação de data+hora — por padrão,
+ * "agora" real, mas aceita uma data/hora arbitrária (usado pelo seletor de
+ * data/hora do Mapa Interativo, pra checar disponibilidade futura).
+ *
+ * selectedTime é opcional (compat retroativa): quando ausente, usa o
+ * relógio real (nowInMinutes()); só passa a ficar "congelado" numa hora
+ * específica quando o call site informa selectedTime explicitamente.
+ */
+export function getRealTimeStatus(space, selectedDate, selectedTime) {
   if (!space) return { status: 'LIVRE', activeAllocation: null };
 
   // 1. Manutenção tem prioridade máxima
@@ -30,47 +46,44 @@ export function getRealTimeStatus(space, selectedDate) {
     return { status: 'MANUTENCAO', activeAllocation: null };
   }
 
-  const allocations = space.scheduleToday || [];
-  const currentMinutes = nowInMinutes();
   const today = todayDateString();
-  const isToday = !selectedDate || selectedDate === today;
+  const targetDate = selectedDate || today;
+  const targetMinutes = selectedTime != null ? timeToMinutes(selectedTime) : nowInMinutes();
 
-  // 2. Se existem alocações para esta sala
+  // 2. Filtra SEMPRE por data primeiro — space.scheduleToday (apesar do
+  //    nome) contém alocações de QUALQUER data, nunca deve ser comparado
+  //    por horário sem filtrar pela data-alvo antes. alloc.date ausente
+  //    (defensivo — coluna é NOT NULL no schema atual) é tratado como hoje.
+  const allocations = (space.scheduleToday || []).filter(alloc => (alloc.date || today) === targetDate);
+
   if (allocations.length > 0) {
-    if (isToday) {
-      // Encontra uma alocação que esteja ativa AGORA (startTime <= agora < endTime)
-      const activeNow = allocations.find(alloc => {
-        const start = timeToMinutes(alloc.startTime);
-        const end = timeToMinutes(alloc.endTime);
-        return currentMinutes >= start && currentMinutes < end;
-      });
+    const activeNow = allocations.find(alloc => {
+      const start = timeToMinutes(alloc.startTime);
+      const end = timeToMinutes(alloc.endTime);
+      return targetMinutes >= start && targetMinutes < end;
+    });
 
-      if (activeNow) {
-        // Existe alocação ativa agora → sala OCUPADA
-        return { status: 'OCUPADO', activeAllocation: activeNow };
-      }
-
-      // Verifica se há alocações futuras (ainda vão acontecer hoje)
-      const futureAlloc = allocations.find(alloc => {
-        const start = timeToMinutes(alloc.startTime);
-        return currentMinutes < start;
-      });
-
-      if (futureAlloc) {
-        // Há alocações futuras → sala LIVRE agora, mas mostra a próxima
-        return { status: 'LIVRE', activeAllocation: futureAlloc };
-      }
-
-      // Todas as alocações do dia já expiraram → sala LIVRE
-      return { status: 'LIVRE', activeAllocation: null };
-    } else {
-      // Visualizando outro dia — mostra a primeira alocação como referência
-      return { status: 'OCUPADO', activeAllocation: allocations[0] };
+    if (activeNow) {
+      return { status: 'OCUPADO', activeAllocation: activeNow };
     }
+
+    // Próxima alocação a partir do horário-alvo, ordenada cronologicamente
+    // (scheduleToday não vem garantidamente em ordem de horário).
+    const futureAllocs = allocations
+      .filter(alloc => timeToMinutes(alloc.startTime) > targetMinutes)
+      .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+
+    if (futureAllocs.length > 0) {
+      return { status: 'LIVRE', activeAllocation: futureAllocs[0] };
+    }
+
+    return { status: 'LIVRE', activeAllocation: null };
   }
 
-  // 3. Se o banco marca OCUPADO mas não há alocações, respeita o DB
-  if (space.status === 'OCUPADO') {
+  // 3. Status manual do banco não tem data associada — só respeitado
+  //    quando a data-alvo é hoje, pra não vazar pra uma data futura/passada
+  //    selecionada no mapa.
+  if (targetDate === today && space.status === 'OCUPADO') {
     return { status: 'OCUPADO', activeAllocation: null };
   }
 
