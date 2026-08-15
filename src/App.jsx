@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import FABAlert from './components/FABAlert';
@@ -81,6 +81,14 @@ export default function App() {
     role: ROLES.PENDENTE
   });
 
+  // Ref "sempre atualizada" de currentUser — usada dentro do listener de
+  // Realtime (useEffect com deps [session], ver abaixo) pra ler o valor
+  // mais recente sem precisar recriar a inscrição do canal a cada mudança
+  // de estado (o que forçaria reconectar o WebSocket sempre que qualquer
+  // colaborador fosse editado).
+  const currentUserRef = useRef(currentUser);
+  useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
+
   // Monta o currentUser a partir da sessão, lendo o cargo do claim `user_role`
   // do JWT (definido pelo Custom Access Token Hook no backend) — nunca do
   // user_metadata, que é editável pelo próprio usuário e não é confiável
@@ -161,6 +169,12 @@ export default function App() {
   const [adminAuditLog, setAdminAuditLog] = useState([]);
   const [adminAuditLogLoading, setAdminAuditLogLoading] = useState(false);
   const [allocations, setAllocations] = useState([]);
+
+  // Mesmo motivo da currentUserRef acima: ler o colaborador mais recente
+  // (pra achar o user_id vinculado a um id de linha excluída) sem depender
+  // de `collaborators` no array de dependências do listener de Realtime.
+  const collaboratorsRef = useRef(collaborators);
+  useEffect(() => { collaboratorsRef.current = collaborators; }, [collaborators]);
 
   const [selectedSpace, setSelectedSpace] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -309,9 +323,38 @@ export default function App() {
       onCollaboratorChange: (eventType, col, oldRow) => {
         if (eventType === 'DELETE') {
           const deletedId = String(oldRow.id);
+
+          // Se a linha excluída é a conta atualmente logada, desloga na
+          // hora — precisa achar o user_id ANTES de tirar do estado local,
+          // porque o evento de DELETE só traz o id da linha (não o
+          // user_id). Reage imediatamente em vez de esperar até 10s pelo
+          // polling de segurança abaixo (que continua existindo como
+          // rede de proteção caso este canal caia).
+          const deletedCol = collaboratorsRef.current.find(c => c.id === deletedId);
+          if (deletedCol?.userId && deletedCol.userId === currentUserRef.current?.id) {
+            handleForcedLogout('Sua conta foi removida do sistema. Você foi desconectado automaticamente.');
+          }
+
           setCollaborators(prev => prev.filter(c => c.id !== deletedId));
           return;
         }
+
+        // Se o cargo do sistema da conta atualmente logada mudou (promoção
+        // ou rebaixamento), força a renovação da sessão. O cargo em uso no
+        // app vem do claim `user_role` do JWT (ver buildUserFromSession),
+        // não da tabela — sem renovar o token, a tela até poderia mostrar
+        // o cargo novo, mas as policies de RLS no banco continuariam
+        // aplicando o cargo ANTIGO até o próximo refresh natural do token
+        // (até 1h depois). refreshSession() força o Custom Access Token
+        // Hook a rodar de novo agora, embutindo o cargo atual no token; o
+        // listener de onAuthStateChange (acima) então atualiza currentUser
+        // e a UI (abas permitidas, tela de Pendente etc.) sozinha.
+        if (col.userId && col.userId === currentUserRef.current?.id && col.systemRole !== currentUserRef.current?.role) {
+          supabase.auth.refreshSession().then(() => {
+            showToast(`Seu cargo foi atualizado para ${col.systemRole}. 🔄`);
+          });
+        }
+
         setCollaborators(prev => upsertById(prev, col));
       },
 
