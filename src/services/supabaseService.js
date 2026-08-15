@@ -34,7 +34,8 @@ export async function loadInitialData() {
       date: a.date,
       startTime: a.start_time,
       endTime: a.end_time,
-      createdAt: a.created_at
+      createdAt: a.created_at,
+      seriesId: a.series_id || null
     }));
 
     let spacesList = [];
@@ -50,7 +51,8 @@ export async function loadInitialData() {
             students: a.studentsCount,
             date: a.date,
             startTime: a.startTime,
-            endTime: a.endTime
+            endTime: a.endTime,
+            seriesId: a.seriesId
           }));
 
         const isLabOrAudit = sp.type?.toLowerCase().includes('lab') || sp.type?.toLowerCase().includes('audit');
@@ -256,7 +258,8 @@ export async function dbAddAllocation(allocData) {
     students_count: Number(allocData.students),
     date: allocData.date,
     start_time: allocData.startTime,
-    end_time: allocData.endTime
+    end_time: allocData.endTime,
+    series_id: allocData.seriesId || null
   });
 
   if (error) {
@@ -278,6 +281,25 @@ export async function dbDeleteAllocation(allocId, spaceId) {
 
   if (spaceId) {
     const { data: remaining } = await supabase.from('allocations').select('*').eq('space_id', String(spaceId));
+    if (!remaining || remaining.length === 0) {
+      await supabase.from('spaces').update({ status: 'LIVRE' }).eq('id', String(spaceId));
+    }
+  }
+}
+
+/**
+ * Cancela TODAS as ocorrências de uma reserva recorrente de uma vez —
+ * um único DELETE por series_id (usa o índice parcial idx_allocations_series_id),
+ * diferente de dbDeleteAllocation, que cancela só 1 ocorrência específica.
+ * Reavalia o status LIVRE/OCUPADO de cada sala afetada depois de apagar.
+ */
+export async function dbDeleteAllocationSeries(seriesId, spaceIdsToRelease) {
+  if (!isSupabaseConfigured()) return;
+  const { error } = await supabase.from('allocations').delete().eq('series_id', String(seriesId));
+  if (error) throw error;
+
+  for (const spaceId of (spaceIdsToRelease || [])) {
+    const { data: remaining } = await supabase.from('allocations').select('id').eq('space_id', String(spaceId));
     if (!remaining || remaining.length === 0) {
       await supabase.from('spaces').update({ status: 'LIVRE' }).eq('id', String(spaceId));
     }

@@ -16,12 +16,14 @@ import ModalReserveSpace from './components/modals/ModalReserveSpace';
 import ModalReportOccurrence from './components/modals/ModalReportOccurrence';
 import ModalAddCollaborator from './components/modals/ModalAddCollaborator';
 import ModalAddClass from './components/modals/ModalAddClass';
+import ModalSeriesResult from './components/modals/ModalSeriesResult';
 
 import { getRealTimeStatus, todayDateString, timeToMinutes, nowInMinutes } from './utils/spaceStatus';
 import {
   loadInitialData,
   dbAddAllocation,
   dbDeleteAllocation,
+  dbDeleteAllocationSeries,
   dbAddOccurrence,
   dbUpdateOccurrenceStatus,
   dbDeleteOccurrence,
@@ -161,6 +163,7 @@ export default function App() {
 
   // Modals state
   const [spaceToAllocate, setSpaceToAllocate] = useState(null);
+  const [seriesResult, setSeriesResult] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportModalSpaceId, setReportModalSpaceId] = useState(null);
   const [showAddCollaboratorModal, setShowAddCollaboratorModal] = useState(false);
@@ -443,8 +446,14 @@ Status Atual: ABERTO`
   }, [currentUser]);
 
   // --- Handlers ---
+  // Sempre processa uma lista de datas — 1 pra reserva avulsa, N pra série
+  // recorrente (recurringDates vem sempre preenchido pelo ModalReserveSpace,
+  // nunca mais um `date` singular). Cada ocorrência usa a data real vinda
+  // do modal — corrige um bug pré-existente em que a reserva avulsa sempre
+  // usava `selectedDate` (o dia visualizado no mapa), ignorando por completo
+  // a data escolhida no formulário.
   const handleAllocateConfirm = async (allocationData) => {
-    const { spaceId, teacher, class: className, students, startTime, endTime } = allocationData;
+    const { spaceId, teacher, class: className, students, startTime, endTime, recurringDates, isRecurring } = allocationData;
 
     const targetSpace = spaces.find(s => s.id === spaceId);
     if (targetSpace && targetSpace.status === 'MANUTENCAO') {
@@ -452,66 +461,88 @@ Status Atual: ABERTO`
       return;
     }
 
-    // 🔒 Verifica se a turma já está alocada em outra sala no mesmo horário
+    const seriesId = isRecurring ? crypto.randomUUID() : null;
     const timeToMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
     const newStart = timeToMin(startTime);
     const newEnd = timeToMin(endTime);
 
-    for (const sp of spaces) {
-      const allocs = sp.scheduleToday || [];
-      for (const alloc of allocs) {
-        if (alloc.class === className && (alloc.date || selectedDate) === selectedDate) {
-          const existStart = timeToMin(alloc.startTime);
-          const existEnd = timeToMin(alloc.endTime);
-          // Verifica sobreposição de horário
-          if (newStart < existEnd && newEnd > existStart) {
-            showToast(`⚠️ A turma "${className}" já está alocada na sala "${sp.name}" das ${alloc.startTime} às ${alloc.endTime}. Aguarde o término da alocação.`);
-            return;
+    const succeeded = [];
+    const failed = [];
+
+    for (let i = 0; i < recurringDates.length; i++) {
+      const date = recurringDates[i];
+
+      // 🔒 Verifica se a turma já está alocada em outra sala nessa data/horário
+      let classClash = null;
+      for (const sp of spaces) {
+        for (const alloc of (sp.scheduleToday || [])) {
+          if (alloc.class === className && (alloc.date || date) === date) {
+            const existStart = timeToMin(alloc.startTime);
+            const existEnd = timeToMin(alloc.endTime);
+            if (newStart < existEnd && newEnd > existStart) {
+              classClash = `Turma já alocada na sala "${sp.name}" das ${alloc.startTime} às ${alloc.endTime}`;
+              break;
+            }
           }
         }
+        if (classClash) break;
+      }
+      if (classClash) {
+        failed.push({ date, reason: classClash });
+        continue;
+      }
+
+      const newAlloc = {
+        id: `alloc-${Date.now()}-${i}`,
+        spaceId,
+        teacher,
+        class: className,
+        students,
+        startTime,
+        endTime,
+        date,
+        seriesId
+      };
+
+      // Só entra em succeeded depois que o banco confirmar — se outra
+      // pessoa reservou o mesmo horário um instante antes, a trava do banco
+      // (allocations_no_overlap) recusa e essa data cai em failed.
+      try {
+        await dbAddAllocation(newAlloc);
+        succeeded.push(newAlloc);
+      } catch (err) {
+        console.error('[Reflow] Erro ao confirmar alocação:', err);
+        failed.push({ date, reason: err.message || 'Não foi possível confirmar a reserva.' });
       }
     }
 
-    const newAlloc = {
-      id: `alloc-${Date.now()}`,
-      spaceId,
-      teacher,
-      class: className,
-      students,
-      startTime,
-      endTime,
-      date: selectedDate
-    };
-
-    // Só atualiza a tela e fecha o modal depois que o banco confirmar —
-    // se outra pessoa reservou o mesmo horário um instante antes, a trava
-    // do banco (allocations_no_overlap) recusa e o usuário fica sabendo.
-    try {
-      await dbAddAllocation(newAlloc);
-    } catch (err) {
-      console.error('[Reflow] Erro ao confirmar alocação:', err);
-      showToast(`⚠️ ${err.message || 'Não foi possível confirmar a reserva. Tente novamente.'}`);
-      return;
-    }
-
-    setSpaces(prevSpaces => prevSpaces.map(sp => {
-      if (sp.id === spaceId) {
-        const updatedSchedule = [...(sp.scheduleToday || []), newAlloc];
-        return { ...sp, status: 'OCUPADO', scheduleToday: updatedSchedule };
-      }
-      return sp;
-    }));
-
-    if (selectedSpace && selectedSpace.id === spaceId) {
-      setSelectedSpace(prev => ({
-        ...prev,
-        status: 'OCUPADO',
-        scheduleToday: [...(prev.scheduleToday || []), newAlloc]
+    if (succeeded.length > 0) {
+      setSpaces(prevSpaces => prevSpaces.map(sp => {
+        if (sp.id !== spaceId) return sp;
+        const newForThisSpace = succeeded.filter(a => a.spaceId === spaceId);
+        return { ...sp, status: 'OCUPADO', scheduleToday: [...(sp.scheduleToday || []), ...newForThisSpace] };
       }));
+
+      if (selectedSpace && selectedSpace.id === spaceId) {
+        setSelectedSpace(prev => ({
+          ...prev,
+          status: 'OCUPADO',
+          scheduleToday: [...(prev.scheduleToday || []), ...succeeded]
+        }));
+      }
     }
 
     setSpaceToAllocate(null);
-    showToast('Espaço Alocado com Sucesso! 🟢');
+
+    if (!isRecurring) {
+      if (succeeded.length > 0) {
+        showToast('Espaço Alocado com Sucesso! 🟢');
+      } else {
+        showToast(`⚠️ ${failed[0]?.reason || 'Não foi possível confirmar a reserva. Tente novamente.'}`);
+      }
+    } else {
+      setSeriesResult({ succeeded, failed, className, spaceName: targetSpace?.name || '' });
+    }
   };
 
   const handleCancelReservation = async (spaceId, allocationId) => {
@@ -545,6 +576,36 @@ Status Atual: ABERTO`
     }
 
     showToast('Reserva Cancelada 🗑️');
+  };
+
+  // Cancela TODAS as ocorrências de uma série recorrente de uma vez —
+  // diferente de handleCancelReservation, que cancela só 1 ocorrência
+  // específica (usado pelo SpaceDrawer, continua inalterado).
+  const handleCancelSeries = async (seriesId, affectedSpaceIds) => {
+    try {
+      await dbDeleteAllocationSeries(seriesId, affectedSpaceIds);
+    } catch (err) {
+      console.error('[Reflow] Erro ao cancelar série:', err);
+      showToast('⚠️ Não foi possível cancelar a série. Tente novamente.');
+      return;
+    }
+
+    setSpaces(prevSpaces => prevSpaces.map(sp => {
+      if (!affectedSpaceIds.includes(sp.id)) return sp;
+      const updatedSchedule = (sp.scheduleToday || []).filter(a => a.seriesId !== seriesId);
+      const newStatus = updatedSchedule.length > 0 ? 'OCUPADO' : 'LIVRE';
+      return { ...sp, status: newStatus, scheduleToday: updatedSchedule };
+    }));
+
+    if (selectedSpace && affectedSpaceIds.includes(selectedSpace.id)) {
+      setSelectedSpace(prev => {
+        const updatedSchedule = (prev.scheduleToday || []).filter(a => a.seriesId !== seriesId);
+        const newStatus = updatedSchedule.length > 0 ? 'OCUPADO' : 'LIVRE';
+        return { ...prev, status: newStatus, scheduleToday: updatedSchedule };
+      });
+    }
+
+    showToast('Série de Reservas Cancelada 🗑️');
   };
 
   // 🔧 Atualiza o status de um espaço (estado local + banco) — usado pra
@@ -921,6 +982,7 @@ Status Atual: ABERTO`
               currentUser={currentUser}
               onUpdateSpace={handleUpdateSpace}
               onUpdateCollaboratorRole={handleUpdateCollaboratorRole}
+              onCancelSeries={handleCancelSeries}
               adminAuditLog={adminAuditLog}
               adminAuditLogLoading={adminAuditLogLoading}
               onLoadAuditLog={handleLoadAdminAuditLog}
@@ -945,6 +1007,13 @@ Status Atual: ABERTO`
           currentUser={currentUser}
           onClose={() => setSpaceToAllocate(null)}
           onConfirm={handleAllocateConfirm}
+        />
+      )}
+
+      {seriesResult && (
+        <ModalSeriesResult
+          {...seriesResult}
+          onClose={() => setSeriesResult(null)}
         />
       )}
 

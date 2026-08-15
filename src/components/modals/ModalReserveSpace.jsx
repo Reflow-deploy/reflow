@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, Users, AlertTriangle, Check } from 'lucide-react';
+import { X, Calendar, Clock, Users, AlertTriangle, Check, Repeat } from 'lucide-react';
 
 // Helper: get real current time "HH:mm"
 function getRealCurrentTime() {
@@ -7,6 +7,43 @@ function getRealCurrentTime() {
   const h = String(now.getHours()).padStart(2, '0');
   const m = String(now.getMinutes()).padStart(2, '0');
   return `${h}:${m}`;
+}
+
+// Helper: soma N dias a uma data "YYYY-MM-DD" sem passar por Date-UTC-parse.
+// new Date("YYYY-MM-DD") interpreta a string como meia-noite UTC, o que
+// desloca o dia da semana em fusos negativos como o do Brasil — aqui
+// construímos o Date a partir das partes, que usa o fuso LOCAL do navegador.
+function addDaysToDateStr(dateStr, days) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + days);
+  const yy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
+
+// Helper: nome do dia da semana em pt-BR, a partir de "YYYY-MM-DD" (mesmo
+// cuidado de fuso local do helper acima).
+function weekdayNameFromDateStr(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  const names = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+  return names[dt.getDay()];
+}
+
+// Gera as datas da série: a cada 7 dias a partir de startDateStr, até
+// endDateStr inclusive. maxOccurrences é um teto de segurança contra erro
+// de digitação na data final (~6 meses).
+function buildRecurringDates(startDateStr, endDateStr, maxOccurrences = 26) {
+  const dates = [];
+  let current = startDateStr;
+  while (current <= endDateStr && dates.length < maxOccurrences) {
+    dates.push(current);
+    current = addDaysToDateStr(current, 7);
+  }
+  return dates;
 }
 
 // Helper: get default end time (+90 mins)
@@ -38,6 +75,8 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
   const [startTime, setStartTime] = useState(realCurrentTime);
   const [endTime, setEndTime] = useState(getDefaultEndTime(realCurrentTime));
   const [errorMsg, setErrorMsg] = useState('');
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState('');
 
   // Auto update end time when start time changes if not modified manually
   const handleStartTimeChange = (newStartTime) => {
@@ -91,21 +130,44 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
       }
     }
 
-    // 4. Validação de conflito / choque de horários na mesma sala
-    const existingSchedule = space.scheduleToday || [];
-    const conflict = existingSchedule.find(alloc => {
-      if (alloc.date && alloc.date !== date) return false;
-      const allocStart = timeToMins(alloc.startTime);
-      const allocEnd = timeToMins(alloc.endTime);
-      return (startMins < allocEnd) && (endMins > allocStart);
-    });
+    // 4. Validação de recorrência (só quando "Repetir semanalmente" está
+    //    marcado — o conflito de horário nesse caso é resolvido linha a
+    //    linha no banco, não aqui: o snapshot scheduleToday só cobre hoje,
+    //    insuficiente para validar N datas futuras).
+    if (isRecurring) {
+      if (!recurrenceEndDate) {
+        setErrorMsg('Selecione até quando a reserva deve se repetir.');
+        return;
+      }
+      const minEndDate = addDaysToDateStr(date, 7);
+      if (recurrenceEndDate < minEndDate) {
+        setErrorMsg(`⚠️ A data final da recorrência deve ser pelo menos 7 dias após ${date} (ao menos 2 ocorrências).`);
+        return;
+      }
+      const maxEndDate = addDaysToDateStr(date, 7 * 26);
+      if (recurrenceEndDate > maxEndDate) {
+        setErrorMsg('⚠️ Período de recorrência muito longo (máximo de 26 semanas / ~6 meses por série).');
+        return;
+      }
+    } else {
+      // 5. Validação de conflito / choque de horários na mesma sala —
+      //    só faz sentido pra reserva avulsa (série é validada no banco).
+      const existingSchedule = space.scheduleToday || [];
+      const conflict = existingSchedule.find(alloc => {
+        if (alloc.date && alloc.date !== date) return false;
+        const allocStart = timeToMins(alloc.startTime);
+        const allocEnd = timeToMins(alloc.endTime);
+        return (startMins < allocEnd) && (endMins > allocStart);
+      });
 
-    if (conflict) {
-      setErrorMsg(`⚠️ Choque de Horários: Já existe um agendamento nesta sala (${conflict.class} com ${conflict.teacher}) das ${conflict.startTime} às ${conflict.endTime}.`);
-      return;
+      if (conflict) {
+        setErrorMsg(`⚠️ Choque de Horários: Já existe um agendamento nesta sala (${conflict.class} com ${conflict.teacher}) das ${conflict.startTime} às ${conflict.endTime}.`);
+        return;
+      }
     }
 
     setErrorMsg('');
+    const recurringDates = isRecurring ? buildRecurringDates(date, recurrenceEndDate) : [date];
     onConfirm({
       spaceId: space.id,
       teacher: currentUser?.name || 'Prof. Filipe Guimarães',
@@ -113,7 +175,8 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
       students: Number(studentsCount),
       startTime,
       endTime,
-      date
+      recurringDates,
+      isRecurring
     });
   };
 
@@ -251,6 +314,48 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
               onChange={(e) => setDate(e.target.value)}
               style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', fontSize: '0.875rem', backgroundColor: '#ffffff', outline: 'none' }}
             />
+          </div>
+
+          <div style={{
+            backgroundColor: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '0.5rem',
+            padding: '0.75rem'
+          }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700, color: '#0f2942' }}>
+              <input
+                type="checkbox"
+                checked={isRecurring}
+                onChange={(e) => setIsRecurring(e.target.checked)}
+                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+              />
+              <Repeat size={15} />
+              Repetir semanalmente
+            </label>
+
+            {isRecurring && (
+              <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0 }}>
+                  Repete toda <strong>{weekdayNameFromDateStr(date)}</strong>
+                </p>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '0.35rem' }}>
+                    Repetir até *
+                  </label>
+                  <input
+                    type="date"
+                    value={recurrenceEndDate}
+                    onChange={(e) => setRecurrenceEndDate(e.target.value)}
+                    style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', fontSize: '0.875rem', backgroundColor: '#ffffff', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+                {recurrenceEndDate && (
+                  <p style={{ fontSize: '0.75rem', color: '#0369a1', fontWeight: 600, margin: 0 }}>
+                    {buildRecurringDates(date, recurrenceEndDate).length} aula(s) serão agendadas
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div>

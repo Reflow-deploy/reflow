@@ -7,6 +7,17 @@ import AdminAuditView from './AdminAuditView';
 
 const ASSIGNABLE_ROLES = [ROLES.PENDENTE, ROLES.PROFESSOR, ROLES.DIRECAO, ROLES.SUPORTE, ROLES.ADMIN];
 
+// Nome do dia da semana em pt-BR a partir de "YYYY-MM-DD", sem passar por
+// Date-UTC-parse (mesmo cuidado de fuso local do helper em ModalReserveSpace.jsx
+// — new Date("YYYY-MM-DD") interpreta como UTC e desloca o dia em fusos
+// negativos como o do Brasil).
+function weekdayNameFromDateStr(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const names = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+  return names[new Date(y, m - 1, d).getDay()];
+}
+
 export default function SettingsModule({
   collaborators,
   classes,
@@ -23,7 +34,8 @@ export default function SettingsModule({
   onUpdateCollaboratorRole = () => { },
   adminAuditLog = [],
   adminAuditLogLoading = false,
-  onLoadAuditLog = () => { }
+  onLoadAuditLog = () => { },
+  onCancelSeries = () => { }
 }) {
   const [subTab, setSubTab] = useState('RESERVATIONS'); // RESERVATIONS | CLASSES | PROFESSIONALS | SPACES | AUDIT
   const [classSubView, setClassSubView] = useState('CLASSES_LIST'); // CLASSES_LIST | WEEKLY_GRID
@@ -696,26 +708,39 @@ export default function SettingsModule({
           });
         });
 
+        // Avulsas (sem seriesId) continuam classificadas em ativa/próxima/
+        // concluída como sempre; agrupadas por série ganham seção própria,
+        // com todas as ocorrências listadas juntas + botão de cancelar a
+        // série inteira.
+        const soloAllocations = myAllocations.filter(a => !a.seriesId);
+        const seriesMap = new Map();
+        myAllocations.filter(a => a.seriesId).forEach(a => {
+          if (!seriesMap.has(a.seriesId)) seriesMap.set(a.seriesId, []);
+          seriesMap.get(a.seriesId).push(a);
+        });
+
         const active = [];
         const upcoming = [];
         const past = [];
         const nowMins = nowInMinutes();
         const todayStr = todayDateString();
 
-        myAllocations.forEach(r => {
+        const classify = (r) => {
           const startM = timeToMinutes(r.startTime);
           const endM = timeToMinutes(r.endTime);
           const rDate = r.date || todayStr;
+          if (rDate > todayStr) return 'upcoming';
+          if (rDate < todayStr) return 'past';
+          if (nowMins >= startM && nowMins < endM) return 'active';
+          if (nowMins < startM) return 'upcoming';
+          return 'past';
+        };
 
-          if (rDate > todayStr) {
-            upcoming.push(r);
-          } else if (rDate < todayStr) {
-            past.push(r);
-          } else {
-            if (nowMins >= startM && nowMins < endM) active.push(r);
-            else if (nowMins < startM) upcoming.push(r);
-            else past.push(r);
-          }
+        soloAllocations.forEach(r => {
+          const bucket = classify(r);
+          if (bucket === 'active') active.push(r);
+          else if (bucket === 'upcoming') upcoming.push(r);
+          else past.push(r);
         });
 
         const ReservationCard = ({ r, highlight }) => (
@@ -750,6 +775,59 @@ export default function SettingsModule({
           </div>
         );
 
+        const SeriesGroup = ({ seriesId, occurrences }) => {
+          const [confirming, setConfirming] = useState(false);
+          const sorted = [...occurrences].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+          const first = sorted[0];
+          const last = sorted[sorted.length - 1];
+          const weekday = weekdayNameFromDateStr(first?.date);
+          const spaceIds = [...new Set(sorted.map(o => o.spaceId))];
+
+          return (
+            <div style={{ backgroundColor: '#ffffff', border: '1px solid #bae6fd', borderRadius: '0.75rem', padding: '1.25rem', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem', flexWrap: 'wrap', gap: '0.6rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#1d4ed8', letterSpacing: '0.06em' }}>
+                    🔁 SÉRIE RECORRENTE
+                  </div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f2942' }}>
+                    Toda {weekday} · {first?.date} a {last?.date} · {sorted.length} aula(s)
+                  </div>
+                </div>
+                {!confirming ? (
+                  <button
+                    onClick={() => setConfirming(true)}
+                    style={{ backgroundColor: '#fff5f5', color: '#b91c1c', border: '1px solid #fee2e2', fontWeight: 600, fontSize: '0.8rem', padding: '0.5rem 0.9rem', borderRadius: '0.375rem', cursor: 'pointer' }}
+                  >
+                    Cancelar série inteira
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#b91c1c', fontWeight: 700 }}>
+                      Cancelar todas as {sorted.length} aulas?
+                    </span>
+                    <button
+                      onClick={() => { onCancelSeries(seriesId, spaceIds); setConfirming(false); }}
+                      style={{ backgroundColor: '#b91c1c', color: '#ffffff', border: 'none', fontWeight: 600, fontSize: '0.75rem', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', cursor: 'pointer' }}
+                    >
+                      Sim, cancelar
+                    </button>
+                    <button
+                      onClick={() => setConfirming(false)}
+                      style={{ backgroundColor: '#f1f5f9', color: '#475569', border: 'none', fontWeight: 600, fontSize: '0.75rem', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', cursor: 'pointer' }}
+                    >
+                      Voltar
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))', gap: '0.75rem' }}>
+                {sorted.map(r => <ReservationCard key={r.id} r={r} highlight={classify(r)} />)}
+              </div>
+            </div>
+          );
+        };
+
         return (
           <div>
             <div style={{ marginBottom: '1.5rem' }}>
@@ -771,6 +849,14 @@ export default function SettingsModule({
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                {seriesMap.size > 0 && (
+                  <div>
+                    {[...seriesMap.entries()].map(([seriesId, occurrences]) => (
+                      <SeriesGroup key={seriesId} seriesId={seriesId} occurrences={occurrences} />
+                    ))}
+                  </div>
+                )}
+
                 {active.length > 0 && (
                   <div>
                     <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#15803d', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>EM ANDAMENTO AGORA</div>
