@@ -10,13 +10,13 @@
  */
 import { supabase } from '../lib/supabaseClient';
 
-export async function sendOccurrenceEmail({ to, subject, bodyHtml }) {
+export async function sendOccurrenceEmail({ to, subject, bodyHtml, bodyText }) {
   if (!supabase) {
     throw new Error('Supabase não está configurado — não é possível enviar e-mail.');
   }
 
   const { data, error } = await supabase.functions.invoke('send-occurrence-email', {
-    body: { to, subject, bodyHtml }
+    body: { to, subject, bodyHtml, bodyText }
   });
 
   if (error) {

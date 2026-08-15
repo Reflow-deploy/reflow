@@ -530,7 +530,7 @@ export default function App() {
               </div>
 
               <div style="text-align: center; margin-top: 24px;">
-                <a href="http://localhost:3000" style="background-color: #0b2238; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 12px 28px; border-radius: 6px; display: inline-block;">
+                <a href="${window.location.origin}" style="background-color: #0b2238; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 12px 28px; border-radius: 6px; display: inline-block;">
                   🔍 Abrir no Painel Reflow
                 </a>
               </div>
@@ -543,6 +543,30 @@ export default function App() {
         </div>
       `;
 
+      // Versão em texto puro do mesmo e-mail — enviada junto com o HTML
+      // (multipart/alternative, ver supabase/functions/send-occurrence-email).
+      // Um e-mail só em HTML, sem parte em texto, é um dos sinais que mais
+      // pesa pro Gmail classificar como Spam; ter as duas partes reduz bem
+      // essa chance mesmo já enviando via API oficial autenticada.
+      const bodyText = [
+        `REFLOW • Alerta Automático de Ocorrência Técnica`,
+        ``,
+        `OCORRÊNCIA ABERTA — Prioridade: ${occurrence.priority}`,
+        ``,
+        `Espaço/Sala: ${occurrence.spaceName}`,
+        `Tipo de Falha: ${occurrence.failureType}`,
+        `Solicitante: ${occurrence.reportedBy} (${reporterEmail})`,
+        `Horário do Chamado: ${formatOccurrenceTimestamp(occurrence.createdAt)}`,
+        `Destinatário: ${targetEmail}`,
+        ``,
+        `Descrição:`,
+        `"${occurrence.description}"`,
+        ``,
+        `Abrir no Painel Reflow: ${window.location.origin}`,
+        ``,
+        `Este é um e-mail automático gerado pelo sistema Reflow.`
+      ].join('\n');
+
       let gmailMsgId = null;
       let apiStatusText;
       let deliveryFailed = false;
@@ -551,7 +575,7 @@ export default function App() {
       // no servidor — nenhum dado sai para terceiros nem depende do
       // professor ter conectado o próprio Gmail).
       try {
-        const res = await sendOccurrenceEmail({ to: targetEmail, subject, bodyHtml });
+        const res = await sendOccurrenceEmail({ to: targetEmail, subject, bodyHtml, bodyText });
         gmailMsgId = res.id;
         apiStatusText = res.statusText;
         showToast(`📧 E-mail entregue na caixa ${targetEmail}!`);
@@ -1022,7 +1046,8 @@ Status Atual: ABERTO`
       await sendOccurrenceEmail({
         to: auditLog.to,
         subject: auditLog.subject,
-        bodyHtml: `<p>${auditLog.snippet}</p>`
+        bodyHtml: `<p>${auditLog.snippet}</p>`,
+        bodyText: auditLog.fullBody || auditLog.snippet
       });
       showToast(`Alerta Reenviado com Sucesso para ${auditLog.to}! 📧`);
     } catch (err) {

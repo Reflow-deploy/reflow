@@ -34,21 +34,50 @@ function base64UrlEncode(str: string): string {
   return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
+function b64(str: string): string {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+// Monta o e-mail como multipart/alternative (texto simples + HTML) em vez de
+// só HTML puro. Um e-mail 100% HTML, sem parte em texto, é um dos sinais que
+// o classificador de spam do Gmail mais pesa contra remetentes automatizados
+// — a grande maioria de phishing é assim. Incluir a parte de texto (que todo
+// cliente de e-mail de verdade também manda) reduz bastante a chance de cair
+// no Spam, mesmo em envios via Gmail API já autenticados.
 function buildMimeEmail(
-  { from, to, subject, bodyHtml }: { from: string; to: string; subject: string; bodyHtml: string },
+  { from, to, subject, bodyHtml, bodyText }:
+    { from: string; to: string; subject: string; bodyHtml: string; bodyText: string },
 ): string {
-  const mimeLines = [
-    `From: ${from}`,
+  const boundary = `reflow_boundary_${crypto.randomUUID().replace(/-/g, "")}`;
+
+  const headers = [
+    `From: Reflow <${from}>`,
     `To: ${to}`,
-    `Subject: =?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`,
+    `Subject: =?UTF-8?B?${b64(subject)}?=`,
     `Date: ${new Date().toUTCString()}`,
     "MIME-Version: 1.0",
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+  ];
+
+  const textPart = [
+    `--${boundary}`,
+    "Content-Type: text/plain; charset=UTF-8",
+    "Content-Transfer-Encoding: base64",
+    "",
+    b64(bodyText),
+  ];
+
+  const htmlPart = [
+    `--${boundary}`,
     "Content-Type: text/html; charset=UTF-8",
     "Content-Transfer-Encoding: base64",
     "",
-    btoa(unescape(encodeURIComponent(bodyHtml))),
+    b64(bodyHtml),
+    "",
+    `--${boundary}--`,
   ];
-  return mimeLines.join("\r\n");
+
+  return [...headers, "", ...textPart, "", ...htmlPart].join("\r\n");
 }
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -93,17 +122,26 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Conta sem permissão para disparar e-mails." }, 403);
   }
 
-  let payload: { to?: string; subject?: string; bodyHtml?: string };
+  let payload: { to?: string; subject?: string; bodyHtml?: string; bodyText?: string };
   try {
     payload = await req.json();
   } catch {
     return jsonResponse({ error: "Corpo da requisição inválido (esperado JSON)." }, 400);
   }
 
-  const { to, subject, bodyHtml } = payload;
+  const { to, subject, bodyHtml, bodyText } = payload;
   if (!to || !subject || !bodyHtml) {
     return jsonResponse({ error: "Campos obrigatórios: to, subject, bodyHtml." }, 400);
   }
+  // bodyText é opcional (compat. com chamadores antigos) — sem ele, cai de
+  // volta pra uma versão em texto puro gerada a partir do HTML, só pra
+  // garantir que a parte text/plain do e-mail nunca fique vazia.
+  const plainText = bodyText && bodyText.trim().length > 0
+    ? bodyText
+    : bodyHtml.replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 
   const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
   const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
@@ -135,7 +173,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // 2) Monta e envia o e-mail via Gmail API, como a conta dona do refresh token
-    const mimeRaw = buildMimeEmail({ from: senderEmail, to, subject, bodyHtml });
+    const mimeRaw = buildMimeEmail({ from: senderEmail, to, subject, bodyHtml, bodyText: plainText });
     const raw = base64UrlEncode(mimeRaw);
 
     const sendRes = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
