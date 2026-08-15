@@ -2,6 +2,129 @@ import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { DEFAULT_SPACES, DEFAULT_COLLABORATORS, DEFAULT_CLASSES } from './defaultData';
 import { todayDateString } from '../utils/spaceStatus';
 
+// -------------------------------------------------------------
+// MAPEAMENTO DE LINHAS DO BANCO (snake_case) -> FORMATO DO APP (camelCase)
+// -------------------------------------------------------------
+// Extraídas como funções isoladas e exportadas porque são usadas tanto por
+// loadInitialData() (carga única no mount) quanto pelo realtimeService (que
+// recebe as mesmas linhas via Supabase Realtime e precisa converter do
+// mesmo jeito pra fundir no estado local sem duplicar a lógica).
+
+export function mapSpaceRow(sp) {
+  const isLabOrAudit = sp.type?.toLowerCase().includes('lab') || sp.type?.toLowerCase().includes('audit');
+  const defaultEquip = isLabOrAudit
+    ? ['Projetor', 'Ar-condicionado', 'Lousa Digital', 'Computadores', 'Sistema de Som']
+    : ['Projetor', 'Ar-condicionado', 'Lousa Digital'];
+  const defaultDesk = isLabOrAudit ? 'Grupo' : 'Individual';
+
+  const rawEquip = sp.equipments;
+  const parsedEquip = Array.isArray(rawEquip)
+    ? rawEquip
+    : (typeof rawEquip === 'string' && rawEquip.startsWith('[') ? JSON.parse(rawEquip) : defaultEquip);
+
+  return {
+    id: String(sp.id),
+    name: sp.name,
+    type: sp.type,
+    capacity: Number(sp.capacity) || 30,
+    block: sp.block,
+    status: sp.status || 'LIVRE',
+    svgGroupId: sp.svg_group_id,
+    equipments: parsedEquip && parsedEquip.length > 0 ? parsedEquip : defaultEquip,
+    deskType: sp.desk_type || defaultDesk
+  };
+}
+
+// Formato "flat" (usado pela lista `allocations` do App, consumida pelo
+// Dashboard/Analytics).
+export function mapAllocationRow(a) {
+  return {
+    id: String(a.id),
+    spaceId: String(a.space_id),
+    teacher: a.teacher,
+    className: a.class_name,
+    studentsCount: Number(a.students_count) || 0,
+    date: a.date,
+    startTime: a.start_time,
+    endTime: a.end_time,
+    createdAt: a.created_at,
+    seriesId: a.series_id || null
+  };
+}
+
+// Formato embutido em space.scheduleToday (nomes de campo diferentes do
+// formato flat acima — convenção pré-existente, mantida aqui).
+export function allocationToScheduleEntry(flatAlloc) {
+  return {
+    id: flatAlloc.id,
+    teacher: flatAlloc.teacher,
+    class: flatAlloc.className,
+    students: flatAlloc.studentsCount,
+    date: flatAlloc.date,
+    startTime: flatAlloc.startTime,
+    endTime: flatAlloc.endTime,
+    seriesId: flatAlloc.seriesId
+  };
+}
+
+export function mapOccurrenceRow(o) {
+  return {
+    id: String(o.id),
+    spaceId: String(o.space_id),
+    spaceName: o.space_name,
+    failureType: o.failure_type,
+    priority: o.priority,
+    description: o.description,
+    status: o.status,
+    createdAt: o.created_at,
+    resolvedAt: o.resolved_at || null,
+    reportedBy: o.reported_by,
+    reportedByUserId: o.reported_by_user_id || null,
+    targetDepartment: o.target_department
+  };
+}
+
+export function mapAuditLogRow(a) {
+  return {
+    id: String(a.id),
+    occurrenceId: String(a.occurrence_id),
+    to: a.to_email,
+    subject: a.subject,
+    priorityBadge: a.priority_badge,
+    timestamp: a.timestamp,
+    snippet: a.snippet,
+    fullBody: a.full_body
+  };
+}
+
+export function mapCollaboratorRow(c) {
+  return {
+    id: String(c.id),
+    initials: c.initials,
+    name: c.name,
+    status: c.status || 'PRESENTE',
+    category: c.category,
+    role: c.role,
+    email: c.email,
+    phone: c.phone,
+    startTime: c.start_time,
+    endTime: c.end_time,
+    workDays: c.work_days || [],
+    notes: c.notes,
+    userId: c.user_id || null,
+    systemRole: c.system_role || 'Pendente',
+    avatarUrl: c.avatar_url || null
+  };
+}
+
+export function mapClassRow(cl) {
+  return {
+    id: String(cl.id),
+    name: cl.name,
+    studentsCount: Number(cl.students_count) || 30
+  };
+}
+
 /**
  * Carrega os dados iniciais do Supabase ou usa os dados padrão (fallback) caso o banco esteja vazio ou inacessível.
  */
@@ -26,18 +149,7 @@ export async function loadInitialData() {
     // Mapeamento único de allocations — reaproveitado tanto pela lista flat
     // (usada pelo Dashboard/Analytics) quanto pelo scheduleToday embutido em
     // cada sala (formato já existente, mantido intacto abaixo).
-    const allocationsFlat = (dbAllocations || []).map(a => ({
-      id: String(a.id),
-      spaceId: String(a.space_id),
-      teacher: a.teacher,
-      className: a.class_name,
-      studentsCount: Number(a.students_count) || 0,
-      date: a.date,
-      startTime: a.start_time,
-      endTime: a.end_time,
-      createdAt: a.created_at,
-      seriesId: a.series_id || null
-    }));
+    const allocationsFlat = (dbAllocations || []).map(mapAllocationRow);
 
     let spacesList = [];
 
@@ -45,38 +157,10 @@ export async function loadInitialData() {
       spacesList = dbSpaces.map(sp => {
         const spaceAllocations = allocationsFlat
           .filter(a => a.spaceId === String(sp.id))
-          .map(a => ({
-            id: a.id,
-            teacher: a.teacher,
-            class: a.className,
-            students: a.studentsCount,
-            date: a.date,
-            startTime: a.startTime,
-            endTime: a.endTime,
-            seriesId: a.seriesId
-          }));
-
-        const isLabOrAudit = sp.type?.toLowerCase().includes('lab') || sp.type?.toLowerCase().includes('audit');
-        const defaultEquip = isLabOrAudit 
-          ? ['Projetor', 'Ar-condicionado', 'Lousa Digital', 'Computadores', 'Sistema de Som'] 
-          : ['Projetor', 'Ar-condicionado', 'Lousa Digital'];
-        const defaultDesk = isLabOrAudit ? 'Grupo' : 'Individual';
-
-        const rawEquip = sp.equipments;
-        const parsedEquip = Array.isArray(rawEquip) 
-          ? rawEquip 
-          : (typeof rawEquip === 'string' && rawEquip.startsWith('[') ? JSON.parse(rawEquip) : defaultEquip);
+          .map(allocationToScheduleEntry);
 
         return {
-          id: String(sp.id),
-          name: sp.name,
-          type: sp.type,
-          capacity: Number(sp.capacity) || 30,
-          block: sp.block,
-          status: sp.status || 'LIVRE',
-          svgGroupId: sp.svg_group_id,
-          equipments: parsedEquip && parsedEquip.length > 0 ? parsedEquip : defaultEquip,
-          deskType: sp.desk_type || defaultDesk,
+          ...mapSpaceRow(sp),
           scheduleToday: spaceAllocations
         };
       });
@@ -91,20 +175,7 @@ export async function loadInitialData() {
     let occurrencesList = [];
 
     if (dbOccurrences && dbOccurrences.length > 0) {
-      occurrencesList = dbOccurrences.map(o => ({
-        id: String(o.id),
-        spaceId: String(o.space_id),
-        spaceName: o.space_name,
-        failureType: o.failure_type,
-        priority: o.priority,
-        description: o.description,
-        status: o.status,
-        createdAt: o.created_at,
-        resolvedAt: o.resolved_at || null,
-        reportedBy: o.reported_by,
-        reportedByUserId: o.reported_by_user_id || null,
-        targetDepartment: o.target_department
-      }));
+      occurrencesList = dbOccurrences.map(mapOccurrenceRow);
     }
 
     // 3. Auditoria de E-mails
@@ -112,16 +183,7 @@ export async function loadInitialData() {
     let auditLogsList = [];
 
     if (dbAudit && dbAudit.length > 0) {
-      auditLogsList = dbAudit.map(a => ({
-        id: String(a.id),
-        occurrenceId: String(a.occurrence_id),
-        to: a.to_email,
-        subject: a.subject,
-        priorityBadge: a.priority_badge,
-        timestamp: a.timestamp,
-        snippet: a.snippet,
-        fullBody: a.full_body
-      }));
+      auditLogsList = dbAudit.map(mapAuditLogRow);
     }
 
     // 4. Colaboradores
@@ -129,25 +191,7 @@ export async function loadInitialData() {
     let collaboratorsList = [];
 
     if (!colErr && dbCollaborators && dbCollaborators.length > 0) {
-      collaboratorsList = dbCollaborators.map(c => ({
-        id: String(c.id),
-        initials: c.initials,
-        name: c.name,
-        status: c.status || 'PRESENTE',
-        category: c.category,
-        role: c.role,
-        email: c.email,
-        phone: c.phone,
-        startTime: c.start_time,
-        endTime: c.end_time,
-        workDays: c.work_days || [],
-        notes: c.notes,
-        // Conta de login vinculada (unificação Colaboradores + Contas & Cargos)
-        userId: c.user_id || null,
-        systemRole: c.system_role || 'Pendente',
-        // Foto do Google, sincronizada a cada login pelo Custom Access Token Hook
-        avatarUrl: c.avatar_url || null
-      }));
+      collaboratorsList = dbCollaborators.map(mapCollaboratorRow);
     } else {
       collaboratorsList = DEFAULT_COLLABORATORS;
       seedCollaboratorsIfEmpty();
@@ -158,11 +202,7 @@ export async function loadInitialData() {
     let classesList = [];
 
     if (!classErr && dbClasses && dbClasses.length > 0) {
-      classesList = dbClasses.map(cl => ({
-        id: String(cl.id),
-        name: cl.name,
-        studentsCount: Number(cl.students_count) || 30
-      }));
+      classesList = dbClasses.map(mapClassRow);
     } else {
       classesList = DEFAULT_CLASSES;
       seedClassesIfEmpty();

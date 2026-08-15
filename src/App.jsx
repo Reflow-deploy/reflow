@@ -39,8 +39,10 @@ import {
   dbUpdateClass,
   dbReleaseExpiredAllocations,
   dbCheckCollaboratorExists,
-  dbGetAdminAuditLog
+  dbGetAdminAuditLog,
+  allocationToScheduleEntry
 } from './services/supabaseService';
+import { subscribeToChanges } from './services/realtimeService';
 import { eventService, EVENTS } from './services/eventService';
 import { sendOccurrenceEmail } from './services/gmailService';
 import { getAllowedTabs, ROLES } from './utils/permissions';
@@ -220,6 +222,111 @@ export default function App() {
       if (data.allocations) setAllocations(data.allocations);
     });
   }, []);
+
+  // 📡 Sincronização em tempo real (Supabase Realtime) — sem isso, uma
+  // alocação/ocorrência/edição feita por outro usuário só aparecia aqui
+  // depois de um F5, já que loadInitialData() acima só roda uma vez no
+  // mount. Cada handler funde o evento recebido no estado local por id
+  // (upsert/remove) — por isso é seguro receber de volta o próprio evento
+  // gerado por uma ação deste mesmo cliente (idempotente, sem duplicar).
+  // Só assina depois de autenticado: a RLS (is_approved()) bloquearia os
+  // eventos de qualquer forma para quem ainda não tem sessão.
+  useEffect(() => {
+    if (!session) return;
+
+    // Substitui o item existente (mesmo id) ou insere no início da lista.
+    const upsertById = (list, item) => {
+      const idx = list.findIndex(x => x.id === item.id);
+      if (idx === -1) return [item, ...list];
+      const copy = [...list];
+      copy[idx] = { ...copy[idx], ...item };
+      return copy;
+    };
+
+    const unsubscribe = subscribeToChanges({
+      onSpaceChange: (eventType, space, oldRow) => {
+        if (eventType === 'DELETE') {
+          const deletedId = String(oldRow.id);
+          setSpaces(prev => prev.filter(sp => sp.id !== deletedId));
+          setSelectedSpace(prev => (prev && prev.id === deletedId) ? null : prev);
+          return;
+        }
+        setSpaces(prev => {
+          const idx = prev.findIndex(sp => sp.id === space.id);
+          // Sala nova pra este cliente — ainda sem alocações conhecidas.
+          if (idx === -1) return [...prev, { ...space, scheduleToday: [] }];
+          const copy = [...prev];
+          copy[idx] = { ...copy[idx], ...space };
+          return copy;
+        });
+        setSelectedSpace(prev => (prev && prev.id === space.id) ? { ...prev, ...space } : prev);
+      },
+
+      onAllocationChange: (eventType, alloc, oldRow) => {
+        if (eventType === 'DELETE') {
+          const deletedId = String(oldRow.id);
+          setAllocations(prev => prev.filter(a => a.id !== deletedId));
+          setSpaces(prev => prev.map(sp => ({
+            ...sp,
+            scheduleToday: (sp.scheduleToday || []).filter(a => a.id !== deletedId)
+          })));
+          setSelectedSpace(prev => prev
+            ? { ...prev, scheduleToday: (prev.scheduleToday || []).filter(a => a.id !== deletedId) }
+            : prev);
+          return;
+        }
+
+        setAllocations(prev => upsertById(prev, alloc));
+
+        const scheduleEntry = allocationToScheduleEntry(alloc);
+        setSpaces(prev => prev.map(sp => {
+          if (sp.id !== alloc.spaceId) return sp;
+          return { ...sp, scheduleToday: upsertById(sp.scheduleToday || [], scheduleEntry) };
+        }));
+        setSelectedSpace(prev => (prev && prev.id === alloc.spaceId)
+          ? { ...prev, scheduleToday: upsertById(prev.scheduleToday || [], scheduleEntry) }
+          : prev);
+      },
+
+      onOccurrenceChange: (eventType, occ, oldRow) => {
+        if (eventType === 'DELETE') {
+          const deletedId = String(oldRow.id);
+          setOccurrences(prev => prev.filter(o => o.id !== deletedId));
+          return;
+        }
+        setOccurrences(prev => upsertById(prev, occ));
+      },
+
+      onAuditLogChange: (eventType, audit, oldRow) => {
+        if (eventType === 'DELETE') {
+          const deletedId = String(oldRow.id);
+          setAuditLogs(prev => prev.filter(a => a.id !== deletedId));
+          return;
+        }
+        setAuditLogs(prev => upsertById(prev, audit));
+      },
+
+      onCollaboratorChange: (eventType, col, oldRow) => {
+        if (eventType === 'DELETE') {
+          const deletedId = String(oldRow.id);
+          setCollaborators(prev => prev.filter(c => c.id !== deletedId));
+          return;
+        }
+        setCollaborators(prev => upsertById(prev, col));
+      },
+
+      onClassChange: (eventType, cls, oldRow) => {
+        if (eventType === 'DELETE') {
+          const deletedId = String(oldRow.id);
+          setClasses(prev => prev.filter(c => c.id !== deletedId));
+          return;
+        }
+        setClasses(prev => upsertById(prev, cls));
+      }
+    });
+
+    return unsubscribe;
+  }, [session]);
 
   // 🔐 Garante que o usuário nunca fique numa aba à qual seu cargo não tem acesso
   // (ex: Equipe de Suporte é restrita à Central de Ocorrências)
