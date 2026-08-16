@@ -50,7 +50,7 @@ export default function OccurrencesCenter({
   });
 
   return (
-    <div style={{ padding: '1.5rem 2rem', flex: 1, overflowY: 'auto' }}>
+    <div style={{ padding: isMobile ? '1.25rem' : '1.5rem 2rem', flex: 1, overflowY: 'auto' }}>
       {/* Header Bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
@@ -162,8 +162,10 @@ export default function OccurrencesCenter({
       {/* VIEW: Occurrences List */}
       {activeTab === 'LIST' && (
         <div className="card-reflow" style={{ padding: '1.5rem' }}>
-          {/* Status Filter Bar (ABERTO / RESOLVIDO) */}
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+          {/* Status Filter Bar (ABERTO / RESOLVIDO) — rolagem horizontal em vez
+              de quebrar linha, pra não deixar pill isolado sozinho numa linha
+              em telas estreitas (ver comentário equivalente nas abas acima). */}
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <button
               onClick={() => setFilterStatus('ABERTO')}
               style={{
@@ -172,6 +174,8 @@ export default function OccurrencesCenter({
                 fontSize: '0.75rem',
                 fontWeight: 700,
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
                 border: filterStatus === 'ABERTO' ? '1px solid #b91c1c' : '1px solid #e2e8f0',
                 backgroundColor: filterStatus === 'ABERTO' ? '#fee2e2' : '#ffffff',
                 color: filterStatus === 'ABERTO' ? '#991b1b' : '#64748b'
@@ -187,6 +191,8 @@ export default function OccurrencesCenter({
                 fontSize: '0.75rem',
                 fontWeight: 700,
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
                 border: filterStatus === 'RESOLVIDO' ? '1px solid #15803d' : '1px solid #e2e8f0',
                 backgroundColor: filterStatus === 'RESOLVIDO' ? '#dcfce7' : '#ffffff',
                 color: filterStatus === 'RESOLVIDO' ? '#166534' : '#64748b'
@@ -202,6 +208,8 @@ export default function OccurrencesCenter({
                 fontSize: '0.75rem',
                 fontWeight: 700,
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
                 border: filterStatus === 'ALL' ? '1px solid #0f2942' : '1px solid #e2e8f0',
                 backgroundColor: filterStatus === 'ALL' ? '#0f2942' : '#ffffff',
                 color: filterStatus === 'ALL' ? '#ffffff' : '#64748b'
@@ -211,8 +219,8 @@ export default function OccurrencesCenter({
             </button>
           </div>
 
-          {/* Department Filter Bar */}
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem', flexWrap: 'wrap' }}>
+          {/* Department Filter Bar — mesma rolagem horizontal */}
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <button
               onClick={() => setFilterDept('ALL')}
               style={{
@@ -221,6 +229,8 @@ export default function OccurrencesCenter({
                 fontSize: '0.75rem',
                 fontWeight: 600,
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
                 border: filterDept === 'ALL' ? '1px solid #0f2942' : '1px solid #e2e8f0',
                 backgroundColor: filterDept === 'ALL' ? '#0f2942' : '#ffffff',
                 color: filterDept === 'ALL' ? '#ffffff' : '#64748b'
@@ -236,6 +246,8 @@ export default function OccurrencesCenter({
                 fontSize: '0.75rem',
                 fontWeight: 600,
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
                 border: filterDept === 'LIMPEZA' ? '1px solid #0f2942' : '1px solid #e2e8f0',
                 backgroundColor: filterDept === 'LIMPEZA' ? '#0f2942' : '#ffffff',
                 color: filterDept === 'LIMPEZA' ? '#ffffff' : '#64748b'
@@ -251,6 +263,8 @@ export default function OccurrencesCenter({
                 fontSize: '0.75rem',
                 fontWeight: 600,
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
                 border: filterDept === 'TI' ? '1px solid #0f2942' : '1px solid #e2e8f0',
                 backgroundColor: filterDept === 'TI' ? '#0f2942' : '#ffffff',
                 color: filterDept === 'TI' ? '#ffffff' : '#64748b'
@@ -266,6 +280,8 @@ export default function OccurrencesCenter({
                 fontSize: '0.75rem',
                 fontWeight: 600,
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
                 border: filterDept === 'MANUTENCAO' ? '1px solid #0f2942' : '1px solid #e2e8f0',
                 backgroundColor: filterDept === 'MANUTENCAO' ? '#0f2942' : '#ffffff',
                 color: filterDept === 'MANUTENCAO' ? '#ffffff' : '#64748b'
@@ -301,8 +317,8 @@ export default function OccurrencesCenter({
                     flexWrap: 'wrap',
                     gap: '1rem'
                   }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
                         <span style={{ fontSize: '1rem', fontWeight: 800, color: '#0f2942' }}>
                           {occ.spaceName}
                         </span>
