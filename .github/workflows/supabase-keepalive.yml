@@ -1,0 +1,24 @@
+name: Supabase keep-alive
+
+# O plano gratuito do Supabase pausa o projeto após ~7 dias sem atividade.
+# Este workflow faz uma consulta leve a cada 3 dias para contar como atividade.
+# Usa só a chave pública (anon) — a mesma que já vai embutida no site — e a
+# RLS continua valendo: sem login, a resposta é vazia, mas a requisição conta.
+on:
+  schedule:
+    - cron: '0 12 */3 * *'
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping no banco
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          curl --fail --silent --show-error \
+            "$SUPABASE_URL/rest/v1/spaces?select=id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY"
