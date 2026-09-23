@@ -78,24 +78,59 @@ export default function SpaceDrawer({
     return '📦';
   };
 
+  // Mobile: "bottom sheet" — sobe de baixo cobrindo até ~85% da tela, com o
+  // mapa ainda visível (escurecido) por cima, em vez de tomar a tela toda.
+  // Conteúdo rola dentro da gaveta e os botões de ação ficam fixos no rodapé.
+  // Usa dvh (altura visível real no iOS) em vez de vh, que inclui a barra do
+  // Safari e escondia os botões de baixo.
+  const asideStyle = isMobile ? {
+    width: '100%',
+    maxHeight: '85dvh',
+    backgroundColor: '#ffffff',
+    borderRadius: '1rem 1rem 0 0',
+    boxShadow: '0 -8px 24px rgba(0, 0, 0, 0.18)',
+    position: 'fixed',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 95,
+    padding: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden'
+  } : {
+    width: '390px',
+    height: 'calc(100vh - 70px)',
+    backgroundColor: '#ffffff',
+    borderLeft: '1px solid #e2e8f0',
+    boxShadow: '-4px 0 16px rgba(0, 0, 0, 0.05)',
+    position: 'fixed',
+    right: 0,
+    top: '70px',
+    zIndex: 45,
+    padding: '1.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    overflowY: 'auto'
+  };
+
   return (
-    <aside className="animate-slide-in-right" style={{
-      width: isMobile ? '100%' : '390px',
-      height: 'calc(100vh - 70px)',
-      backgroundColor: '#ffffff',
-      borderLeft: isMobile ? 'none' : '1px solid #e2e8f0',
-      boxShadow: '-4px 0 16px rgba(0, 0, 0, 0.05)',
-      position: 'fixed',
-      right: 0,
-      top: '70px',
-      zIndex: 45,
-      padding: '1.5rem',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-      overflowY: 'auto'
-    }}>
-      <div>
+    <>
+    {isMobile && (
+      <div
+        onClick={onClose}
+        aria-hidden="true"
+        style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.45)', zIndex: 94 }}
+      />
+    )}
+    <aside className={isMobile ? 'animate-slide-up' : 'animate-slide-in-right'} style={asideStyle}>
+      {isMobile && (
+        <div aria-hidden="true" style={{ flexShrink: 0, display: 'flex', justifyContent: 'center', padding: '0.6rem 0 0.2rem 0' }}>
+          <div style={{ width: '40px', height: '4px', borderRadius: '9999px', backgroundColor: '#cbd5e1' }} />
+        </div>
+      )}
+      <div style={isMobile ? { flex: 1, minHeight: 0, overflowY: 'auto', padding: '0.5rem 1.25rem 1rem 1.25rem' } : undefined}>
         {/* Drawer Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', fontWeight: 600, color: '#334155' }}>
@@ -407,7 +442,12 @@ export default function SpaceDrawer({
       </div>
 
       {/* Action Buttons */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: '0.75rem', borderTop: '1px solid #f1f5f9',
+        ...(isMobile
+          ? { flexShrink: 0, padding: '0.85rem 1.25rem calc(0.85rem + env(safe-area-inset-bottom))', backgroundColor: '#ffffff' }
+          : { paddingTop: '1rem' })
+      }}>
         {isMaintenance ? (
           <button
             disabled
@@ -500,5 +540,6 @@ export default function SpaceDrawer({
         )}
       </div>
     </aside>
+    </>
   );
 }

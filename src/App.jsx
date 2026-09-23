@@ -1206,7 +1206,9 @@ Status Atual: ABERTO`
       </div>
 
       {/* Floating Action Siren Button — Equipe de Suporte não reporta ocorrências, apenas as resolve */}
-      {currentUser?.role !== ROLES.SUPORTE && (
+      {/* Em mobile, some enquanto a gaveta da sala está aberta — ela já tem
+          seu próprio "Reportar Problema" e a sirene cobria os botões dela. */}
+      {currentUser?.role !== ROLES.SUPORTE && !(isMobile && activeTab === 'map' && selectedSpace) && (
         <FABAlert onClick={() => {
           setReportModalSpaceId(null);
           setShowReportModal(true);
