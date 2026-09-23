@@ -50,7 +50,7 @@ export default function OccurrencesCenter({
   });
 
   return (
-    <div style={{ padding: isMobile ? '1.25rem' : '1.5rem 2rem', flex: 1, overflowY: 'auto' }}>
+    <div style={{ padding: isMobile ? '1.25rem 1.25rem 5rem 1.25rem' : '1.5rem 2rem', flex: 1, overflowY: 'auto' }}>
       {/* Header Bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>

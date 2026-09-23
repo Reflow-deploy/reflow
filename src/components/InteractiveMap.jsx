@@ -129,7 +129,7 @@ export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace
   }, [searchQuery, isMobile]);
 
   return (
-    <div style={{ padding: isMobile ? '1rem' : '1.5rem 2rem', flex: 1, overflowY: 'auto' }}>
+    <div style={{ padding: isMobile ? '1rem 1rem 5rem 1rem' : '1.5rem 2rem', flex: 1, overflowY: 'auto' }}>
       {/* Top Section Header with Title and Date Picker.
           Em mobile fica compacto (título menor, sem subtítulo, data/hora/Agora
           numa linha só) pra o mapa aparecer sem precisar rolar a página. */}
