@@ -84,20 +84,24 @@ export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace
   const matchingSpaceIds = matchingSpaces.map(s => s.id);
 
   return (
-    <div style={{ padding: '1.5rem 2rem', flex: 1, overflowY: 'auto' }}>
-      {/* Top Section Header with Title and Date Picker */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ padding: isMobile ? '1rem' : '1.5rem 2rem', flex: 1, overflowY: 'auto' }}>
+      {/* Top Section Header with Title and Date Picker.
+          Em mobile fica compacto (título menor, sem subtítulo, data/hora/Agora
+          numa linha só) pra o mapa aparecer sem precisar rolar a página. */}
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', marginBottom: isMobile ? '0.75rem' : '1rem', flexWrap: 'wrap', gap: isMobile ? '0.6rem' : '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f2942', letterSpacing: '-0.02em', margin: 0 }}>
+          <h1 style={{ fontSize: isMobile ? '1.1rem' : '1.35rem', fontWeight: 800, color: '#0f2942', letterSpacing: '-0.02em', margin: 0 }}>
             Planta Baixa Interativa do Colégio
           </h1>
-          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0.2rem 0 0 0' }}>
-            Controle e acompanhamento de disponibilidade em tempo real
-          </p>
+          {!isMobile && (
+            <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0.2rem 0 0 0' }}>
+              Controle e acompanhamento de disponibilidade em tempo real
+            </p>
+          )}
         </div>
 
         {/* Date + Time Selectors */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.4rem' : '0.6rem', flexWrap: isMobile ? 'nowrap' : 'wrap' }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -105,18 +109,20 @@ export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace
             backgroundColor: '#ffffff',
             border: '1px solid #cbd5e1',
             borderRadius: '0.5rem',
-            padding: '0.45rem 0.9rem',
+            padding: isMobile ? '0.4rem 0.6rem' : '0.45rem 0.9rem',
             fontSize: '0.85rem',
             color: '#334155',
             fontWeight: 600,
-            boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+            flex: isMobile ? '1 1 0' : 'none',
+            minWidth: 0
           }}>
-            <Calendar size={16} color="#0f2942" />
+            <Calendar size={16} color="#0f2942" style={{ flexShrink: 0 }} />
             <input
               type="date"
               value={selectedDate || '2026-05-27'}
               onChange={(e) => setSelectedDate(e.target.value)}
-              style={{ border: 'none', background: 'transparent', outline: 'none', fontFamily: 'inherit', fontWeight: 600, color: '#0f2942', cursor: 'pointer' }}
+              style={{ border: 'none', background: 'transparent', outline: 'none', fontFamily: 'inherit', fontWeight: 600, color: '#0f2942', cursor: 'pointer', minWidth: 0, width: isMobile ? '100%' : 'auto', fontSize: isMobile ? '0.8rem' : 'inherit' }}
             />
           </div>
 
@@ -127,33 +133,36 @@ export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace
             backgroundColor: '#ffffff',
             border: '1px solid #cbd5e1',
             borderRadius: '0.5rem',
-            padding: '0.45rem 0.9rem',
+            padding: isMobile ? '0.4rem 0.6rem' : '0.45rem 0.9rem',
             fontSize: '0.85rem',
             color: '#334155',
             fontWeight: 600,
-            boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+            flex: isMobile ? '0 1 auto' : 'none',
+            minWidth: 0
           }}>
-            <Clock size={16} color="#0f2942" />
+            <Clock size={16} color="#0f2942" style={{ flexShrink: 0 }} />
             <input
               type="time"
               value={selectedTime || ''}
               onChange={(e) => setSelectedTime(e.target.value)}
-              style={{ border: 'none', background: 'transparent', outline: 'none', fontFamily: 'inherit', fontWeight: 600, color: '#0f2942', cursor: 'pointer' }}
+              style={{ border: 'none', background: 'transparent', outline: 'none', fontFamily: 'inherit', fontWeight: 600, color: '#0f2942', cursor: 'pointer', minWidth: 0, width: isMobile ? '4.5rem' : 'auto', fontSize: isMobile ? '0.8rem' : 'inherit' }}
             />
           </div>
 
           <button
             onClick={onResetToNow}
             title="Voltar para a data e hora atuais"
+            aria-label="Voltar para a data e hora atuais"
             style={{
-              display: 'flex', alignItems: 'center', gap: '0.35rem',
+              display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0,
               backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '0.5rem',
-              padding: '0.45rem 0.8rem', fontSize: '0.8rem', fontWeight: 700, color: '#334155',
+              padding: isMobile ? '0.5rem' : '0.45rem 0.8rem', fontSize: '0.8rem', fontWeight: 700, color: '#334155',
               cursor: 'pointer'
             }}
           >
-            <RotateCcw size={14} />
-            Agora
+            <RotateCcw size={isMobile ? 16 : 14} />
+            {!isMobile && 'Agora'}
           </button>
         </div>
       </div>
@@ -165,10 +174,12 @@ export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace
       )}
 
       {/* Quick Filter Chips (Atalhos Clicáveis de Pesquisa Rápida) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
-        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.25rem', marginRight: '0.25rem' }}>
+      {/* Em mobile vira uma única faixa com rolagem horizontal (em vez de 4
+          linhas de chips empurrando o mapa pra baixo da dobra). */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: isMobile ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch', marginBottom: isMobile ? '0.75rem' : '1.25rem', paddingBottom: isMobile ? '0.25rem' : 0 }}>
+        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.25rem', marginRight: '0.25rem', flexShrink: 0, whiteSpace: 'nowrap' }}>
           <Filter size={13} color="#64748b" />
-          Filtros Rápido:
+          {!isMobile && 'Filtros Rápido:'}
         </span>
         {QUICK_FILTERS.map(chip => {
           const isActive = (chip.query === '' && searchQuery === '') || (chip.query !== '' && searchQuery.toLowerCase() === chip.query.toLowerCase());
@@ -186,6 +197,8 @@ export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace
                 color: isActive ? '#ffffff' : '#334155',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
                 boxShadow: isActive ? '0 2px 6px rgba(15,41,66,0.2)' : 'none'
               }}
             >
@@ -239,7 +252,7 @@ export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace
 
       {/* Main Outer White Card Container */}
       <div className="card-reflow" style={{
-        padding: '1.25rem 1.5rem',
+        padding: isMobile ? '0.75rem' : '1.25rem 1.5rem',
         backgroundColor: '#ffffff',
         borderRadius: '0.75rem',
         border: '1px solid #e2e8f0',
@@ -250,18 +263,18 @@ export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace
           display: 'flex',
           alignItems: 'center',
           justify: 'space-between',
-          gap: '1.5rem',
+          gap: isMobile ? '0.5rem' : '1.5rem',
           flexWrap: 'wrap',
-          marginBottom: '1rem',
-          paddingBottom: '0.75rem',
+          marginBottom: isMobile ? '0.5rem' : '1rem',
+          paddingBottom: isMobile ? '0.5rem' : '0.75rem',
           borderBottom: '1px solid #f1f5f9'
         }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#334155', letterSpacing: '0.06em', marginRight: '1rem' }}>
+          <div style={{ fontSize: isMobile ? '0.65rem' : '0.75rem', fontWeight: 800, color: '#334155', letterSpacing: '0.06em', marginRight: isMobile ? 0 : '1rem' }}>
             MAPA UNIFICADO DO CAMPUS ESCOLAR
           </div>
 
           {/* Status Legend */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', fontSize: '0.825rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.9rem' : '1.5rem', fontSize: isMobile ? '0.72rem' : '0.825rem', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#166534', fontWeight: 700 }}>
               <span style={{ width: '9px', height: '9px', borderRadius: '9999px', backgroundColor: '#16a34a', display: 'inline-block' }}></span>
               Livre
