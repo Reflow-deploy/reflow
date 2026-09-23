@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Calendar, Clock, Users, AlertTriangle, Check, Repeat } from 'lucide-react';
+import { useIsMobile } from '../../utils/useIsMobile';
+import { todayDateString } from '../../utils/spaceStatus';
 
 // Helper: get real current time "HH:mm"
 function getRealCurrentTime() {
@@ -64,10 +66,13 @@ function timeToMins(timeStr) {
 }
 
 export default function ModalReserveSpace({ space, classes, currentUser, onClose, onConfirm, initialDate, initialTime }) {
-  if (!space) return null;
+  const isMobile = useIsMobile();
 
   const realCurrentTime = getRealCurrentTime();
-  const todayDate = new Date().toISOString().split('T')[0];
+  // Data LOCAL de hoje. Antes usava new Date().toISOString() (UTC): no Brasil,
+  // depois das 21h já é "amanhã" em UTC, e o formulário passava a recusar
+  // reservas para o dia atual e a abrir com a data do dia seguinte.
+  const todayDate = todayDateString();
 
   // Pré-preenchimento vindo da data/hora selecionada no Mapa Interativo —
   // só aplicado quando representa "hoje ou futuro", pra nunca abrir o
@@ -91,6 +96,42 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
   const [errorMsg, setErrorMsg] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrenceEndDate, setRecurrenceEndDate] = useState('');
+
+  // O erro aparece no topo do formulário, mas o botão "Confirmar" fica no
+  // rodapé fixo — sem isso, quem já rolou pra baixo não via a mensagem e
+  // parecia que o botão não fazia nada.
+  const formScrollRef = useRef(null);
+  useEffect(() => {
+    if (errorMsg && formScrollRef.current) {
+      formScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [errorMsg]);
+
+  // Estilo base dos campos. Em mobile a fonte é 16px: abaixo disso o Safari do
+  // iPhone dá zoom automático na página ao focar no campo. Campos de data/hora
+  // recebem appearance:none + minWidth:0 pra não vazar do cartão no iOS.
+  const inputStyle = {
+    width: '100%',
+    boxSizing: 'border-box',
+    minWidth: 0,
+    padding: '0.6rem 0.8rem',
+    borderRadius: '0.375rem',
+    border: '1px solid #e2e8f0',
+    fontSize: isMobile ? '1rem' : '0.875rem',
+    backgroundColor: '#ffffff',
+    outline: 'none',
+    fontFamily: 'inherit'
+  };
+  const dateTimeStyle = {
+    ...inputStyle,
+    display: 'block',
+    WebkitAppearance: 'none',
+    appearance: 'none',
+    textAlign: 'left',
+    minHeight: '2.6rem'
+  };
+
+  if (!space) return null;
 
   // Auto update end time when start time changes if not modified manually
   const handleStartTimeChange = (newStartTime) => {
@@ -199,7 +240,7 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
       <div className="card-reflow" style={{
         width: '100%',
         maxWidth: '480px',
-        maxHeight: '90vh',
+        maxHeight: '90dvh',
         padding: 0,
         position: 'relative',
         display: 'flex',
@@ -228,7 +269,7 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
 
         {/* Conteúdo rolável — só esta parte rola, header e rodapé ficam fixos */}
         <form onSubmit={handleConfirm} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
-        <div style={{ overflowY: 'auto', padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div ref={formScrollRef} style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', padding: isMobile ? '0.85rem 1.1rem' : '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
         {/* Selected Space Info Badge */}
         <div style={{
@@ -236,14 +277,13 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
           border: '1px solid #e2e8f0',
           borderRadius: '0.5rem',
           padding: '0.75rem',
-          marginBottom: '0.75rem',
           fontSize: '0.85rem'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-            <span style={{ fontWeight: 700, color: '#0f2942' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.4rem' }}>
+            <span style={{ fontWeight: 700, color: '#0f2942', minWidth: 0 }}>
               📍 Espaço: {space.name} ({space.type})
             </span>
-            <span style={{ backgroundColor: '#0b2238', color: '#ffffff', fontSize: '0.675rem', fontWeight: 800, padding: '0.25rem 0.5rem', borderRadius: '0.25rem' }}>
+            <span style={{ backgroundColor: '#0b2238', color: '#ffffff', fontSize: '0.675rem', fontWeight: 800, padding: '0.25rem 0.5rem', borderRadius: '0.25rem', whiteSpace: 'nowrap', flexShrink: 0 }}>
               MÁX: {space.capacity} ALUNOS
             </span>
           </div>
@@ -271,8 +311,8 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
           fontWeight: 600,
           display: 'flex',
           alignItems: 'center',
-          justify: 'space-between',
-          marginBottom: '1rem'
+          justifyContent: 'space-between',
+          gap: '0.5rem'
         }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <Clock size={14} color="#0284c7" />
@@ -284,7 +324,7 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
         </div>
 
         {errorMsg && (
-          <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '0.65rem 0.85rem', borderRadius: '0.375rem', fontSize: '0.8rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', lineHeight: '1.4' }}>
+          <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '0.65rem 0.85rem', borderRadius: '0.375rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', lineHeight: '1.4' }}>
             <AlertTriangle size={18} style={{ flexShrink: 0 }} />
             <div>{errorMsg}</div>
           </div>
@@ -299,7 +339,7 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
               type="text"
               readOnly
               value={currentUser?.name || 'Prof. Filipe Guimarães'}
-              style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', fontSize: '0.875rem', color: '#334155', outline: 'none' }}
+              style={{ ...inputStyle, backgroundColor: '#f8fafc', color: '#334155' }}
             />
           </div>
 
@@ -310,7 +350,7 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', fontSize: '0.875rem', backgroundColor: '#ffffff', outline: 'none' }}
+              style={inputStyle}
             >
               {classes.map((c) => (
                 <option key={c.id} value={c.name}>{c.name} ({c.studentsCount} alunos)</option>
@@ -325,8 +365,9 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
             <input
               type="date"
               value={date}
+              min={todayDate}
               onChange={(e) => setDate(e.target.value)}
-              style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', fontSize: '0.875rem', backgroundColor: '#ffffff', outline: 'none' }}
+              style={dateTimeStyle}
             />
           </div>
 
@@ -359,8 +400,9 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
                   <input
                     type="date"
                     value={recurrenceEndDate}
+                    min={addDaysToDateStr(date, 7)}
                     onChange={(e) => setRecurrenceEndDate(e.target.value)}
-                    style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', fontSize: '0.875rem', backgroundColor: '#ffffff', outline: 'none', boxSizing: 'border-box' }}
+                    style={dateTimeStyle}
                   />
                 </div>
                 {recurrenceEndDate && (
@@ -378,14 +420,16 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
             </label>
             <input
               type="number"
+              inputMode="numeric"
+              min={1}
               value={studentsCount}
               onChange={(e) => setStudentsCount(e.target.value)}
               placeholder={`Capacidade limite da sala: ${space.capacity} alunos`}
-              style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', fontSize: '0.875rem', backgroundColor: '#ffffff', outline: 'none' }}
+              style={inputStyle}
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '0.75rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '0.35rem' }}>
                 Hora de Início *
@@ -394,7 +438,7 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
                 type="time"
                 value={startTime}
                 onChange={(e) => handleStartTimeChange(e.target.value)}
-                style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', fontSize: '0.875rem', backgroundColor: '#ffffff', outline: 'none' }}
+                style={dateTimeStyle}
               />
             </div>
 
@@ -406,7 +450,7 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', fontSize: '0.875rem', backgroundColor: '#ffffff', outline: 'none' }}
+                style={dateTimeStyle}
               />
             </div>
           </div>
