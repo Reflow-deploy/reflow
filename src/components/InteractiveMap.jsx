@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Calendar, Search, X, Sparkles, Filter, Clock, RotateCcw } from 'lucide-react';
 import SchoolMap from './SchoolMap';
 import { useIsMobile } from '../utils/useIsMobile';
@@ -23,6 +23,16 @@ const QUICK_FILTERS = [
   { label: '🪑 Mesas Individuais', query: 'Individual' },
   { label: '🖊️ Lousa Digital', query: 'Lousa' }
 ];
+
+// Posição horizontal (cx, no viewBox de 1080 de largura do SchoolMap) de cada
+// sala — usada só pra rolar o mapa até a sala encontrada por uma busca/filtro
+// em telas estreitas. Espelha roomCoordinates de SchoolMap.jsx.
+const MAP_VIEWBOX_WIDTH = 1080;
+const ROOM_CX = {
+  'lab-info': 160, 'lab-ciencias': 370, quadra: 640, teatro: 910,
+  'sala-01': 110, 'sala-02': 275, 'sala-03': 440, 'sala-04': 605, 'sala-05': 770, 'sala-06': 935,
+  biblioteca: 300, auditorio: 680
+};
 
 export function checkSpaceMatchesQuery(space, query) {
   if (!query || query.trim() === '') return true;
@@ -82,6 +92,41 @@ export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace
   // Encontra todas as salas que correspondem à busca
   const matchingSpaces = spaces.filter(space => checkSpaceMatchesQuery(space, searchQuery));
   const matchingSpaceIds = matchingSpaces.map(s => s.id);
+
+  // --- Navegação horizontal do mapa em mobile ---
+  const mapScrollRef = useRef(null);
+  const [scrollEdges, setScrollEdges] = useState({ canLeft: false, canRight: false });
+  const [hasUserScrolled, setHasUserScrolled] = useState(false);
+
+  const updateScrollEdges = useCallback(() => {
+    const el = mapScrollRef.current;
+    if (!el) return;
+    setScrollEdges({
+      canLeft: el.scrollLeft > 8,
+      canRight: el.scrollLeft + el.clientWidth < el.scrollWidth - 8
+    });
+  }, []);
+
+  useEffect(() => {
+    updateScrollEdges();
+    window.addEventListener('resize', updateScrollEdges);
+    return () => window.removeEventListener('resize', updateScrollEdges);
+  }, [isMobile, updateScrollEdges]);
+
+  // Quando uma busca/filtro encontra salas, rola o mapa até a primeira (mais à
+  // esquerda) — sem isso, o resultado pode ficar fora da tela e o usuário acha
+  // que o filtro não funcionou.
+  useEffect(() => {
+    if (!isMobile || !hasSearchActive) return;
+    const el = mapScrollRef.current;
+    if (!el) return;
+    const xs = matchingSpaceIds.map(id => ROOM_CX[id]).filter(x => x != null);
+    if (xs.length === 0) return;
+    const scale = el.scrollWidth / MAP_VIEWBOX_WIDTH;
+    const left = Math.max(0, Math.min(...xs) * scale - el.clientWidth / 2);
+    el.scrollTo({ left, behavior: 'smooth' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, isMobile]);
 
   return (
     <div style={{ padding: isMobile ? '1rem' : '1.5rem 2rem', flex: 1, overflowY: 'auto' }}>
@@ -291,27 +336,58 @@ export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace
         </div>
 
         {/* 3D Isometric SVG Map Canvas */}
-        <div style={{
-          position: 'relative',
-          width: '100%',
-          minHeight: '440px',
-          overflowX: isMobile ? 'auto' : 'visible',
-          WebkitOverflowScrolling: 'touch'
-        }}>
-          {/* Em mobile, o SVG não pode encolher abaixo de uma largura
-              legível — em vez de deixar width:100% (CSS) minimizar o mapa
-              inteiro até caber na tela (o que miniaturiza demais o texto
-              dos foreignObject de cada sala), forçamos uma largura mínima
-              e deixamos o container acima rolar horizontalmente por toque. */}
-          <div style={{ minWidth: isMobile ? '900px' : '100%' }}>
-            <SchoolMap
-              spaces={spaces}
-              selectedSpaceId={selectedSpace?.id}
-              onSpaceSelect={setSelectedSpace}
-              matchingSpaceIds={matchingSpaceIds}
-              hasSearchActive={hasSearchActive}
-            />
+        {/* Wrapper externo: guarda os indicadores de rolagem (esmaecido nas
+            bordas + dica) fixos, sem rolarem junto com o mapa. */}
+        <div style={{ position: 'relative', width: '100%' }}>
+          <div
+            ref={mapScrollRef}
+            onScroll={() => {
+              updateScrollEdges();
+              if (!hasUserScrolled) setHasUserScrolled(true);
+            }}
+            style={{
+              position: 'relative',
+              width: '100%',
+              minHeight: '440px',
+              overflowX: isMobile ? 'auto' : 'visible',
+              WebkitOverflowScrolling: 'touch'
+            }}
+          >
+            {/* Em mobile, o SVG não pode encolher abaixo de uma largura
+                legível — em vez de deixar width:100% (CSS) minimizar o mapa
+                inteiro até caber na tela (o que miniaturiza demais o texto
+                dos foreignObject de cada sala), forçamos uma largura mínima
+                e deixamos o container acima rolar horizontalmente por toque. */}
+            <div style={{ minWidth: isMobile ? '900px' : '100%' }}>
+              <SchoolMap
+                spaces={spaces}
+                selectedSpaceId={selectedSpace?.id}
+                onSpaceSelect={setSelectedSpace}
+                matchingSpaceIds={matchingSpaceIds}
+                hasSearchActive={hasSearchActive}
+              />
+            </div>
           </div>
+
+          {isMobile && scrollEdges.canLeft && (
+            <div aria-hidden="true" style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '28px', pointerEvents: 'none', background: 'linear-gradient(to right, rgba(255,255,255,0.95), rgba(255,255,255,0))' }} />
+          )}
+          {isMobile && scrollEdges.canRight && (
+            <div aria-hidden="true" style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: '28px', pointerEvents: 'none', background: 'linear-gradient(to left, rgba(255,255,255,0.95), rgba(255,255,255,0))' }} />
+          )}
+
+          {/* Dica de rolagem — some depois do primeiro movimento do usuário */}
+          {isMobile && !hasUserScrolled && scrollEdges.canRight && (
+            <div style={{
+              position: 'absolute', left: '50%', bottom: '0.75rem', transform: 'translateX(-50%)',
+              backgroundColor: 'rgba(15,41,66,0.88)', color: '#ffffff',
+              fontSize: '0.72rem', fontWeight: 700, padding: '0.35rem 0.8rem',
+              borderRadius: '9999px', pointerEvents: 'none', whiteSpace: 'nowrap',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+            }}>
+              ↔ Arraste para os lados para ver o mapa todo
+            </div>
+          )}
         </div>
       </div>
     </div>
