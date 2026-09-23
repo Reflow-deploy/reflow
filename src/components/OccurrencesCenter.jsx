@@ -52,35 +52,37 @@ export default function OccurrencesCenter({
   return (
     <div style={{ padding: isMobile ? '1.25rem 1.25rem 5rem 1.25rem' : '1.5rem 2rem', flex: 1, overflowY: 'auto' }}>
       {/* Header Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', marginBottom: isMobile ? '1rem' : '1.5rem', flexWrap: 'wrap', gap: isMobile ? '0.75rem' : '1rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f2942' }}>
-              Ocorrências e Suporte Técnico
+            <h1 style={{ fontSize: isMobile ? '1.25rem' : '1.4rem', fontWeight: 800, color: '#0f2942', margin: 0 }}>
+              Ocorrências
             </h1>
-            <span style={{
-              backgroundColor: '#dcfce7',
-              color: '#15803d',
-              fontSize: '0.7rem',
-              fontWeight: 700,
-              padding: '0.2rem 0.6rem',
-              borderRadius: '9999px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.3rem'
-            }}>
-              <CheckCircle2 size={12} />
-              Envio de e-mail automático
-            </span>
+            {!isMobile && (
+              <span style={{
+                backgroundColor: '#dcfce7',
+                color: '#15803d',
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                padding: '0.2rem 0.6rem',
+                borderRadius: '9999px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem'
+              }}>
+                <CheckCircle2 size={12} />
+                E-mail automático
+              </span>
+            )}
           </div>
-          <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.25rem' }}>
-            Acompanhe problemas nos espaços e audite os e-mails automáticos disparados via API oficial do Gmail
+          <p style={{ fontSize: isMobile ? '0.8rem' : '0.875rem', color: '#64748b', marginTop: '0.25rem', marginBottom: 0 }}>
+            Problemas nos espaços e e-mails de alerta enviados.
           </p>
         </div>
 
         {/* Navigation Tabs & Clear Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '0.25rem', borderRadius: '0.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexDirection: isMobile ? 'column' : 'row', alignSelf: isMobile ? 'stretch' : 'auto' }}>
+          <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '0.25rem', borderRadius: '0.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%', width: isMobile ? '100%' : 'auto' }}>
             <button
               onClick={() => setActiveTab('LIST')}
               style={{
@@ -93,10 +95,11 @@ export default function OccurrencesCenter({
                 backgroundColor: activeTab === 'LIST' ? '#0b2238' : 'transparent',
                 color: activeTab === 'LIST' ? '#ffffff' : '#64748b',
                 whiteSpace: 'nowrap',
+                flex: isMobile ? 1 : 'none',
                 flexShrink: 0
               }}
             >
-              Lista de Ocorrências ({occurrences.length})
+              Ocorrências ({occurrences.length})
             </button>
             <button
               onClick={() => setActiveTab('AUDIT')}
@@ -111,12 +114,14 @@ export default function OccurrencesCenter({
                 color: activeTab === 'AUDIT' ? '#ffffff' : '#64748b',
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '0.35rem',
                 whiteSpace: 'nowrap',
+                flex: isMobile ? 1 : 'none',
                 flexShrink: 0
               }}
             >
-              Auditoria de E-mails
+              E-mails enviados
               {auditLogs.length > 0 && (
                 <span style={{
                   backgroundColor: '#ef4444',
@@ -149,7 +154,9 @@ export default function OccurrencesCenter({
                 color: '#b91c1c',
                 fontSize: '0.8rem',
                 fontWeight: 600,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                justifyContent: 'center',
+                width: isMobile ? '100%' : 'auto'
               }}
             >
               <Trash2 size={14} />
@@ -161,7 +168,7 @@ export default function OccurrencesCenter({
 
       {/* VIEW: Occurrences List */}
       {activeTab === 'LIST' && (
-        <div className="card-reflow" style={{ padding: '1.5rem' }}>
+        <div className="card-reflow" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
           {/* Status Filter Bar (ABERTO / RESOLVIDO) — rolagem horizontal em vez
               de quebrar linha, pra não deixar pill isolado sozinho numa linha
               em telas estreitas (ver comentário equivalente nas abas acima). */}
@@ -215,7 +222,7 @@ export default function OccurrencesCenter({
                 color: filterStatus === 'ALL' ? '#ffffff' : '#64748b'
               }}
             >
-              Todos os Status ({occurrences.length})
+              Todos
             </button>
           </div>
 
@@ -236,7 +243,7 @@ export default function OccurrencesCenter({
                 color: filterDept === 'ALL' ? '#ffffff' : '#64748b'
               }}
             >
-              Todas as Falhas ({occurrences.length})
+              Todas
             </button>
             <button
               onClick={() => setFilterDept('LIMPEZA')}
@@ -253,7 +260,7 @@ export default function OccurrencesCenter({
                 color: filterDept === 'LIMPEZA' ? '#ffffff' : '#64748b'
               }}
             >
-              Equipe de Limpeza & Apoio
+              Limpeza
             </button>
             <button
               onClick={() => setFilterDept('TI')}
@@ -270,7 +277,7 @@ export default function OccurrencesCenter({
                 color: filterDept === 'TI' ? '#ffffff' : '#64748b'
               }}
             >
-              Suporte de TI & AV
+              TI / AV
             </button>
             <button
               onClick={() => setFilterDept('MANUTENCAO')}
@@ -287,15 +294,15 @@ export default function OccurrencesCenter({
                 color: filterDept === 'MANUTENCAO' ? '#ffffff' : '#64748b'
               }}
             >
-              Manutenção Predial / Elétrica
+              Manutenção
             </button>
           </div>
 
           {filteredOccurrences.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3.5rem 1rem', color: '#94a3b8' }}>
               <CheckCircle2 size={52} color="#22c55e" style={{ margin: '0 auto 1rem auto' }} />
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#334155' }}>Tudo Limpo!</h3>
-              <p style={{ fontSize: '0.875rem' }}>Nenhuma ocorrência {filterStatus === 'RESOLVIDO' ? 'resolvida' : filterStatus === 'ABERTO' ? 'aberta' : ''} nesta categoria no momento.</p>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#334155' }}>Tudo limpo!</h3>
+              <p style={{ fontSize: '0.875rem' }}>Nenhuma ocorrência {filterStatus === 'RESOLVIDO' ? 'resolvida' : filterStatus === 'ABERTO' ? 'aberta' : ''}.</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -310,12 +317,12 @@ export default function OccurrencesCenter({
                     border: '1px solid #e2e8f0',
                     borderLeft: `5px solid ${isResolved ? '#15803d' : (isUrgent ? '#ef4444' : '#f59e0b')}`,
                     borderRadius: '0.5rem',
-                    padding: '1.25rem',
+                    padding: isMobile ? '0.9rem' : '1.25rem',
                     display: 'flex',
                     alignItems: 'flex-start',
                     justifyContent: 'space-between',
                     flexWrap: 'wrap',
-                    gap: '1rem'
+                    gap: isMobile ? '0.75rem' : '1rem'
                   }}>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
@@ -331,7 +338,7 @@ export default function OccurrencesCenter({
                           borderRadius: '0.25rem',
                           textTransform: 'uppercase'
                         }}>
-                          Prioridade: {occ.priority}
+                          {occ.priority}
                         </span>
                         <span style={{
                           backgroundColor: isResolved ? '#dcfce7' : '#e0f2fe',
@@ -350,20 +357,20 @@ export default function OccurrencesCenter({
                       </div>
 
                       <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.25rem' }}>
-                        Categorização: {occ.failureType}
+                        {occ.failureType}
                       </div>
 
-                      <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.75rem' }}>
-                        "{occ.description}"
+                      <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 0.6rem 0', overflowWrap: 'anywhere' }}>
+                        {occ.description}
                       </p>
 
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
-                        <span>Solicitante: {occ.reportedBy}</span>
-                        <span>Destino (Gmail): <strong>{occ.targetEmail || occ.targetDepartment}</strong></span>
+                      <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', flexWrap: 'wrap', gap: isMobile ? '0.25rem 1rem' : '0.25rem 1.5rem', overflowWrap: 'anywhere' }}>
+                        <span>Por {occ.reportedBy}</span>
+                        <span>Para: <strong>{occ.targetEmail || occ.targetDepartment}</strong></span>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'stretch' }}>
+                    <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', gap: '0.5rem', alignItems: 'stretch', width: isMobile ? '100%' : 'auto' }}>
                       <button
                         onClick={() => onUpdateOccurrenceStatus(occ.id, isResolved ? 'ABERTO' : 'RESOLVIDO')}
                         style={{
@@ -379,11 +386,13 @@ export default function OccurrencesCenter({
                           alignItems: 'center',
                           justifyContent: 'center',
                           gap: '0.35rem',
-                          whiteSpace: 'nowrap'
+                          whiteSpace: 'nowrap',
+                          flex: isMobile ? 1 : 'none',
+                          minHeight: isMobile ? '2.5rem' : undefined
                         }}
                       >
                         {isResolved ? <RotateCcw size={15} /> : <CheckCircle2 size={15} />}
-                        {isResolved ? 'Reabrir Chamado' : 'Marcar como Resolvido'}
+                        {isResolved ? 'Reabrir' : 'Resolver'}
                       </button>
 
                       {isOwnRequest && (
@@ -403,11 +412,13 @@ export default function OccurrencesCenter({
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '0.35rem',
-                            whiteSpace: 'nowrap'
+                            whiteSpace: 'nowrap',
+                            flex: isMobile ? 1 : 'none',
+                            minHeight: isMobile ? '2.5rem' : undefined
                           }}
                         >
                           <X size={13} />
-                          Excluir Minha Solicitação
+                          Excluir
                         </button>
                       )}
                     </div>
@@ -421,7 +432,7 @@ export default function OccurrencesCenter({
 
       {/* VIEW: E-mail Audit Log (Gmail API Logs) */}
       {activeTab === 'AUDIT' && (
-        <div className="card-reflow" style={{ padding: '1.5rem', minHeight: '480px' }}>
+        <div className="card-reflow" style={{ padding: isMobile ? '1rem' : '1.5rem', minHeight: isMobile ? '320px' : '480px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '340px 1fr', gap: '1.5rem' }}>
 
             {/* Sent Mail List — em mobile, some assim que um item é selecionado
@@ -429,11 +440,11 @@ export default function OccurrencesCenter({
             {(!isMobile || !selectedAuditLog) && (
             <div style={{ borderRight: isMobile ? 'none' : '1px solid #f1f5f9', paddingRight: isMobile ? 0 : '1rem' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.05em', marginBottom: '1rem' }}>
-                Mensagens Disparadas via API Gmail ({auditLogs.length})
+                E-mails enviados ({auditLogs.length})
               </div>
 
               {auditLogs.length === 0 ? (
-                <p style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Nenhum e-mail disparado via API ainda.</p>
+                <p style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Nenhum e-mail enviado.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {auditLogs.map((log) => {
@@ -451,8 +462,8 @@ export default function OccurrencesCenter({
                           transition: 'all 0.15s ease'
                         }}
                       >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#64748b', marginBottom: '0.2rem' }}>
-                          <span>Para: {log.to}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.15rem 0.75rem', fontSize: '0.75rem', color: '#64748b', marginBottom: '0.2rem' }}>
+                          <span style={{ overflowWrap: 'anywhere' }}>Para: {log.to}</span>
                           <span>🕒 {formatDateTime(log.timestamp)}</span>
                         </div>
                         <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#0f2942', marginBottom: '0.25rem' }}>
@@ -489,7 +500,7 @@ export default function OccurrencesCenter({
                               padding: '0.1rem 0.35rem',
                               borderRadius: '0.2rem'
                             }}>
-                              GMAIL ID: {log.gmailMessageId.substring(0, 8)}...
+                              ID: {log.gmailMessageId.substring(0, 8)}…
                             </span>
                           )}
                         </div>
@@ -515,22 +526,22 @@ export default function OccurrencesCenter({
                     marginBottom: '0.75rem', padding: 0
                   }}
                 >
-                  <ChevronLeft size={16} /> Voltar para a lista
+                  <ChevronLeft size={16} /> Voltar
                 </button>
               )}
               {activeLog ? (
-                <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '0.5rem', padding: '1.25rem' }}>
-                  <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f2942', marginBottom: '0.35rem' }}>
+                <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '0.5rem', padding: isMobile ? '0.9rem' : '1.25rem' }}>
+                  <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: isMobile ? '1rem' : '1.1rem', fontWeight: 800, color: '#0f2942', marginBottom: '0.35rem', overflowWrap: 'anywhere' }}>
                         {activeLog.subject}
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                        <div><strong>Destinatário (Gmail):</strong> {activeLog.to}</div>
-                        <div><strong>Horário do Disparo:</strong> {formatDateTime(activeLog.timestamp)}</div>
+                      <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '0.2rem', overflowWrap: 'anywhere' }}>
+                        <div><strong>Para:</strong> {activeLog.to}</div>
+                        <div><strong>Enviado em:</strong> {formatDateTime(activeLog.timestamp)}</div>
                         {activeLog.gmailMessageId && (
                           <div style={{ color: '#166534', fontWeight: 600 }}>
-                            <strong>Gmail Message ID:</strong> {activeLog.gmailMessageId} (Status: HTTP 200 OK)
+                            <strong>ID Gmail:</strong> {activeLog.gmailMessageId}
                           </div>
                         )}
                       </div>
@@ -559,12 +570,14 @@ export default function OccurrencesCenter({
 
                   <pre style={{
                     fontFamily: 'var(--font-mono)',
-                    fontSize: '0.825rem',
+                    fontSize: isMobile ? '0.75rem' : '0.825rem',
                     color: '#334155',
                     whiteSpace: 'pre-wrap',
+                    overflowWrap: 'anywhere',
                     lineHeight: '1.6',
                     backgroundColor: '#ffffff',
-                    padding: '1rem',
+                    padding: isMobile ? '0.75rem' : '1rem',
+                    margin: 0,
                     borderRadius: '0.375rem',
                     border: '1px solid #e2e8f0'
                   }}>
@@ -574,7 +587,7 @@ export default function OccurrencesCenter({
               ) : (
                 <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
                   <Mail size={40} style={{ marginBottom: '0.5rem' }} />
-                  <p style={{ fontSize: '0.875rem' }}>Nenhum Alerta Selecionado</p>
+                  <p style={{ fontSize: '0.875rem' }}>Selecione um e-mail.</p>
                 </div>
               )}
             </div>
