@@ -287,9 +287,20 @@ body {
   cursor: pointer;
 }
 
-.isometric-room-group:hover .room-3d-block {
-  filter: brightness(1.1);
-  transform: translateY(-2px);
+/* Hover só onde existe mouse. No touch, o :hover "gruda" depois do toque, e o
+   transform no rótulo (HTML dentro de <foreignObject>) faz o Safari/iOS parar
+   de escalar o rótulo junto com o mapa — ele aparecia maior e com o fundo
+   cortado. O destaque do rótulo no hover usa só sombra (sem transform). */
+@media (hover: hover) and (pointer: fine) {
+  .isometric-room-group:hover .room-3d-block {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+  }
+}
+
+.isometric-room-group,
+.reflow-svg-map {
+  -webkit-tap-highlight-color: transparent;
 }
 
 .isometric-room-group.selected .room-3d-block {
@@ -308,9 +319,10 @@ body {
   transition: all 0.2s ease-in-out;
 }
 
-.room-banner-html:hover {
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 8px 16px -2px rgba(0, 0, 0, 0.25) !important;
+@media (hover: hover) and (pointer: fine) {
+  .room-banner-html:hover {
+    box-shadow: 0 8px 16px -2px rgba(0, 0, 0, 0.25) !important;
+  }
 }
 
 .room-banner-html.selected {
