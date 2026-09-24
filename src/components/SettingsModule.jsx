@@ -4,8 +4,17 @@ import { getRealTimeStatus, nowInMinutes, timeToMinutes, todayDateString } from 
 import { ROLES } from '../utils/permissions';
 import ModalEditSpace from './modals/ModalEditSpace';
 import AdminAuditView from './AdminAuditView';
+import { useIsMobile } from '../utils/useIsMobile';
 
 const ASSIGNABLE_ROLES = [ROLES.PENDENTE, ROLES.PROFESSOR, ROLES.DIRECAO, ROLES.SUPORTE, ROLES.ADMIN];
+
+// "YYYY-MM-DD" -> "DD/MM/AAAA" (só reformata a string, sem Date — evita
+// deslocamento de fuso). Antes as datas apareciam cruas, como 2026-09-23.
+function formatDateBR(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
 
 // Nome do dia da semana em pt-BR a partir de "YYYY-MM-DD", sem passar por
 // Date-UTC-parse (mesmo cuidado de fuso local do helper em ModalReserveSpace.jsx
@@ -37,7 +46,30 @@ export default function SettingsModule({
   onLoadAuditLog = () => { },
   onCancelSeries = () => { }
 }) {
+  const isMobile = useIsMobile();
   const [subTab, setSubTab] = useState('RESERVATIONS'); // RESERVATIONS | CLASSES | PROFESSIONALS | SPACES | AUDIT
+
+  // Em mobile as 5 abas não cabem numa linha e a faixa rola de lado — ao
+  // tocar numa, centraliza ela pra não ficar meio escondida na borda.
+  const selectTab = (id, e) => {
+    setSubTab(id);
+    e?.currentTarget?.scrollIntoView?.({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  };
+  const subTabStyle = (id) => ({
+    padding: isMobile ? '0.5rem 0.75rem' : '0.45rem 0.9rem',
+    borderRadius: '0.375rem',
+    border: 'none',
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+    backgroundColor: subTab === id ? '#0b2238' : 'transparent',
+    color: subTab === id ? '#ffffff' : '#64748b',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.35rem',
+    whiteSpace: 'nowrap',
+    flexShrink: 0
+  });
   const [classSubView, setClassSubView] = useState('CLASSES_LIST'); // CLASSES_LIST | WEEKLY_GRID
   const [searchCollaborator, setSearchCollaborator] = useState('');
   const [searchSpace, setSearchSpace] = useState('');
@@ -81,75 +113,30 @@ export default function SettingsModule({
   });
 
   return (
-    <div style={{ padding: '1.5rem 2rem', flex: 1, overflowY: 'auto' }}>
+    <div style={{ padding: isMobile ? '1rem 1rem 5rem 1rem' : '1.5rem 2rem', flex: 1, overflowY: 'auto' }}>
       {/* Settings Navigation Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', marginBottom: isMobile ? '1rem' : '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f2942' }}>
-            Configurações do Sistema
+          <h1 style={{ fontSize: isMobile ? '1.25rem' : '1.4rem', fontWeight: 800, color: '#0f2942', margin: 0 }}>
+            Configurações
           </h1>
-          <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
-            Centralize a gestão e a visualização de salas, turmas, colaboradores e reservas
+          <p style={{ fontSize: isMobile ? '0.8rem' : '0.875rem', color: '#64748b', margin: '0.25rem 0 0 0' }}>
+            Reservas, turmas, equipe e salas.
           </p>
         </div>
 
         {/* Sub-Tabs */}
         <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '0.25rem', borderRadius: '0.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>
-          <button
-            onClick={() => setSubTab('RESERVATIONS')}
-            style={{
-              padding: '0.45rem 0.9rem',
-              borderRadius: '0.375rem',
-              border: 'none',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              backgroundColor: subTab === 'RESERVATIONS' ? '#0b2238' : 'transparent',
-              color: subTab === 'RESERVATIONS' ? '#ffffff' : '#64748b',
-              whiteSpace: 'nowrap',
-              flexShrink: 0
-            }}
-          >
-            Minhas Reservas
+          <button onClick={(e) => selectTab('RESERVATIONS', e)} style={subTabStyle('RESERVATIONS')}>
+            Reservas
           </button>
 
-          <button
-            onClick={() => setSubTab('CLASSES')}
-            style={{
-              padding: '0.45rem 0.9rem',
-              borderRadius: '0.375rem',
-              border: 'none',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              backgroundColor: subTab === 'CLASSES' ? '#0b2238' : 'transparent',
-              color: subTab === 'CLASSES' ? '#ffffff' : '#64748b',
-              whiteSpace: 'nowrap',
-              flexShrink: 0
-            }}
-          >
+          <button onClick={(e) => selectTab('CLASSES', e)} style={subTabStyle('CLASSES')}>
             Turmas
           </button>
 
-          <button
-            onClick={() => setSubTab('PROFESSIONALS')}
-            style={{
-              padding: '0.45rem 0.9rem',
-              borderRadius: '0.375rem',
-              border: 'none',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              backgroundColor: subTab === 'PROFESSIONALS' ? '#0b2238' : 'transparent',
-              color: subTab === 'PROFESSIONALS' ? '#ffffff' : '#64748b',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              whiteSpace: 'nowrap',
-              flexShrink: 0
-            }}
-          >
-            Profissionais
+          <button onClick={(e) => selectTab('PROFESSIONALS', e)} style={subTabStyle('PROFESSIONALS')}>
+            Equipe
             {isSuperAdmin && collaborators.some(c => c.systemRole === ROLES.PENDENTE) && (
               <span style={{
                 backgroundColor: '#ef4444',
@@ -164,43 +151,12 @@ export default function SettingsModule({
             )}
           </button>
 
-          <button
-            onClick={() => setSubTab('SPACES')}
-            style={{
-              padding: '0.45rem 0.9rem',
-              borderRadius: '0.375rem',
-              border: 'none',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              backgroundColor: subTab === 'SPACES' ? '#0b2238' : 'transparent',
-              color: subTab === 'SPACES' ? '#ffffff' : '#64748b',
-              whiteSpace: 'nowrap',
-              flexShrink: 0
-            }}
-          >
+          <button onClick={(e) => selectTab('SPACES', e)} style={subTabStyle('SPACES')}>
             Salas
           </button>
 
           {isSuperAdmin && (
-            <button
-              onClick={() => setSubTab('AUDIT')}
-              style={{
-                padding: '0.45rem 0.9rem',
-                borderRadius: '0.375rem',
-                border: 'none',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.35rem',
-                backgroundColor: subTab === 'AUDIT' ? '#0b2238' : 'transparent',
-                color: subTab === 'AUDIT' ? '#ffffff' : '#64748b',
-                whiteSpace: 'nowrap',
-                flexShrink: 0
-              }}
-            >
+            <button onClick={(e) => selectTab('AUDIT', e)} style={subTabStyle('AUDIT')}>
               <ShieldCheck size={14} />
               Auditoria
             </button>
@@ -227,7 +183,7 @@ export default function SettingsModule({
                 <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="text"
-                  placeholder="Buscar sala por nome, tipo ou equipamentos..."
+                  placeholder="Buscar sala"
                   value={searchSpace}
                   onChange={(e) => setSearchSpace(e.target.value)}
                   style={{
@@ -245,13 +201,13 @@ export default function SettingsModule({
           </div>
 
           {/* Spaces Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: isMobile ? '0.75rem' : '1.25rem' }}>
             {filteredSpaces.map(sp => (
               <div key={sp.id} style={{
                 backgroundColor: '#ffffff',
                 borderRadius: '0.75rem',
                 border: '1px solid #e2e8f0',
-                padding: '1.25rem',
+                padding: isMobile ? '1rem' : '1.25rem',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -280,15 +236,15 @@ export default function SettingsModule({
                   </h3>
 
                   <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '0.3rem', marginBottom: '1rem' }}>
-                    <div>🏢 <strong>Bloco:</strong> {sp.block}</div>
-                    <div>👥 <strong>Capacidade:</strong> {sp.capacity} alunos</div>
-                    <div>🪑 <strong>Mesas:</strong> {sp.deskType === 'Grupo' ? 'Mesas em Grupo (Bancadas)' : sp.deskType === 'Individual' ? 'Mesas Individuais' : 'Layout Misto'}</div>
+                    <div>🏢 {sp.block}</div>
+                    <div>👥 Até {sp.capacity} alunos</div>
+                    <div>🪑 {sp.deskType === 'Grupo' ? 'Mesas em grupo' : sp.deskType === 'Individual' ? 'Mesas individuais' : 'Layout misto'}</div>
                   </div>
 
                   {/* Equipments Badges */}
                   <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem', marginBottom: '1rem' }}>
                     <span style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '0.4rem' }}>
-                      Equipamentos Presentes:
+                      Equipamentos
                     </span>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                       {sp.equipments && sp.equipments.length > 0 ? (
@@ -329,11 +285,11 @@ export default function SettingsModule({
                     onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = '#0f2942'; }}
                   >
                     <Edit3 size={14} />
-                    Editar Informações da Sala
+                    Editar sala
                   </button>
                 ) : (
                   <div style={{ fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center', fontStyle: 'italic', paddingTop: '0.5rem' }}>
-                    Modo Leitura (Apenas Admins podem alterar)
+                    Somente leitura
                   </div>
                 )}
               </div>
@@ -352,7 +308,7 @@ export default function SettingsModule({
                 <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="text"
-                  placeholder="Buscar colaborador por nome, cargo ou observação..."
+                  placeholder="Buscar por nome ou função"
                   value={searchCollaborator}
                   onChange={(e) => setSearchCollaborator(e.target.value)}
                   style={{
@@ -375,13 +331,14 @@ export default function SettingsModule({
                   border: '1px solid #cbd5e1',
                   fontSize: '0.85rem',
                   backgroundColor: '#ffffff',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  width: isMobile ? '100%' : 'auto'
                 }}
               >
-                <option value="ALL">Todas as Categorias</option>
-                <option value="Docente">Docentes (Professores)</option>
-                <option value="Apoio">Apoio (Limpeza / TI)</option>
-                <option value="Administrativo">Administrativo (Direção / Coordenação)</option>
+                <option value="ALL">Todas as categorias</option>
+                <option value="Docente">Docentes</option>
+                <option value="Apoio">Apoio</option>
+                <option value="Administrativo">Administrativo</option>
               </select>
             </div>
 
@@ -389,21 +346,21 @@ export default function SettingsModule({
               <button
                 onClick={onOpenAddCollaborator}
                 className="btn-primary"
-                style={{ fontSize: '0.85rem' }}
+                style={{ fontSize: '0.85rem', width: isMobile ? '100%' : 'auto', justifyContent: 'center' }}
               >
                 <Plus size={16} />
-                Novo Colaborador
+                Novo colaborador
               </button>
             ) : (
               <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                 <AlertCircle size={14} />
-                Modo Leitura (Apenas Admins cadastram)
+                Somente leitura
               </div>
             )}
           </div>
 
           {/* Grid de Colaboradores */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: isMobile ? '0.75rem' : '1.25rem' }}>
             {filteredCollaborators.map((col) => {
               const isPendingAccess = isSuperAdmin && col.systemRole === ROLES.PENDENTE;
               const isSelfAccount = col.email?.toLowerCase() === currentUser?.email?.toLowerCase();
@@ -415,7 +372,7 @@ export default function SettingsModule({
                   borderRadius: '0.75rem',
                   border: `1px solid ${isPendingAccess ? '#fde68a' : '#e2e8f0'}`,
                   borderLeft: isPendingAccess ? '4px solid #f59e0b' : '1px solid #e2e8f0',
-                  padding: '1.25rem',
+                  padding: isMobile ? '1rem' : '1.25rem',
                   boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -444,8 +401,8 @@ export default function SettingsModule({
                           ? <img src={col.avatarUrl} alt={col.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} referrerPolicy="no-referrer" />
                           : col.initials}
                       </div>
-                      <div>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f2942', margin: 0 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f2942', margin: 0, overflowWrap: 'anywhere' }}>
                           {col.name}
                         </h3>
                         <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
@@ -469,7 +426,7 @@ export default function SettingsModule({
                         {col.userId
                           ? <Link2 size={12} color="#15803d" />
                           : <Hourglass size={12} color="#94a3b8" />}
-                        Cargo no Sistema
+                        Acesso
                       </div>
                       {isSelfAccount ? (
                         <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0f2942' }}>{col.systemRole}</span>
@@ -498,8 +455,8 @@ export default function SettingsModule({
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.8rem', color: '#475569', marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Mail size={14} color="#64748b" />
-                      <span>{col.email}</span>
+                      <Mail size={14} color="#64748b" style={{ flexShrink: 0 }} />
+                      <span style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{col.email}</span>
                     </div>
                     {col.phone && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -509,7 +466,7 @@ export default function SettingsModule({
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                       <Clock size={14} color="#64748b" />
-                      <span>Jornada: {col.startTime}h às {col.endTime}h</span>
+                      <span>{col.startTime} às {col.endTime}</span>
                     </div>
                   </div>
 
@@ -538,7 +495,7 @@ export default function SettingsModule({
 
                   {col.notes && (
                     <p style={{ fontSize: '0.75rem', color: '#64748b', fontStyle: 'italic', borderTop: '1px solid #f1f5f9', paddingTop: '0.6rem', margin: 0 }}>
-                      "{col.notes}"
+                      {col.notes}
                     </p>
                   )}
                 </div>
@@ -581,7 +538,7 @@ export default function SettingsModule({
                         alignItems: 'center',
                         justifyContent: 'center'
                       }}
-                      title="Excluir Colaborador"
+                      title="Excluir" aria-label="Excluir colaborador"
                     >
                       <Trash2 size={13} />
                     </button>
@@ -599,7 +556,7 @@ export default function SettingsModule({
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f2942', margin: 0 }}>
-              Lista de Turmas Cadastradas
+              Turmas
             </h2>
 
             {isAdmin ? (
@@ -614,12 +571,12 @@ export default function SettingsModule({
             ) : (
               <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                 <AlertCircle size={14} />
-                Modo Leitura (Apenas Admins cadastram)
+                Somente leitura
               </div>
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))', gap: isMobile ? '0.75rem' : '1.25rem' }}>
             {classes.map((cls) => (
               <div
                 key={cls.id}
@@ -627,7 +584,7 @@ export default function SettingsModule({
                   backgroundColor: '#ffffff',
                   borderRadius: '0.75rem',
                   border: '1px solid #e2e8f0',
-                  padding: '1.25rem',
+                  padding: isMobile ? '1rem' : '1.25rem',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
@@ -639,7 +596,7 @@ export default function SettingsModule({
                     {cls.name}
                   </h3>
                   <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                    👥 {cls.studentsCount} alunos matriculados
+                    👥 {cls.studentsCount} alunos
                   </span>
                 </div>
 
@@ -681,7 +638,7 @@ export default function SettingsModule({
                         alignItems: 'center',
                         justifyContent: 'center'
                       }}
-                      title="Excluir Turma"
+                      title="Excluir" aria-label="Excluir turma"
                     >
                       <Trash2 size={13} />
                     </button>
@@ -748,7 +705,7 @@ export default function SettingsModule({
             backgroundColor: '#ffffff',
             borderRadius: '0.75rem',
             border: `1px solid ${highlight === 'active' ? '#bbf7d0' : highlight === 'upcoming' ? '#bae6fd' : '#e2e8f0'}`,
-            padding: '1.25rem',
+            padding: isMobile ? '1rem' : '1.25rem',
             boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
             display: 'flex',
             flexDirection: 'column',
@@ -768,9 +725,9 @@ export default function SettingsModule({
             </h3>
 
             <div style={{ fontSize: '0.8rem', color: '#475569', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <div>📚 <strong>Turma:</strong> {r.class}</div>
-              <div>👥 <strong>Alunos:</strong> {r.students} alunos</div>
-              <div>📅 <strong>Data:</strong> {r.date || todayStr}</div>
+              <div>📚 {r.class}</div>
+              <div>👥 {r.students} alunos</div>
+              <div>📅 {formatDateBR(r.date || todayStr)}</div>
             </div>
           </div>
         );
@@ -784,14 +741,14 @@ export default function SettingsModule({
           const spaceIds = [...new Set(sorted.map(o => o.spaceId))];
 
           return (
-            <div style={{ backgroundColor: '#ffffff', border: '1px solid #bae6fd', borderRadius: '0.75rem', padding: '1.25rem', marginBottom: '1rem' }}>
+            <div style={{ backgroundColor: '#ffffff', border: '1px solid #bae6fd', borderRadius: '0.75rem', padding: isMobile ? '1rem' : '1.25rem', marginBottom: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem', flexWrap: 'wrap', gap: '0.6rem' }}>
                 <div>
                   <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#1d4ed8', letterSpacing: '0.06em' }}>
-                    🔁 SÉRIE RECORRENTE
+                    🔁 SÉRIE SEMANAL
                   </div>
                   <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f2942' }}>
-                    Toda {weekday} · {first?.date} a {last?.date} · {sorted.length} aula(s)
+                    Toda {weekday.toLowerCase()} · {formatDateBR(first?.date)} a {formatDateBR(last?.date)} · {sorted.length} {sorted.length === 1 ? 'aula' : 'aulas'}
                   </div>
                 </div>
                 {!confirming ? (
@@ -799,7 +756,7 @@ export default function SettingsModule({
                     onClick={() => setConfirming(true)}
                     style={{ backgroundColor: '#fff5f5', color: '#b91c1c', border: '1px solid #fee2e2', fontWeight: 600, fontSize: '0.8rem', padding: '0.5rem 0.9rem', borderRadius: '0.375rem', cursor: 'pointer' }}
                   >
-                    Cancelar série inteira
+                    Cancelar série
                   </button>
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -832,19 +789,16 @@ export default function SettingsModule({
           <div>
             <div style={{ marginBottom: '1.5rem' }}>
               <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f2942', margin: 0 }}>
-                Minhas Alocações & Agendamentos
+                Minhas reservas
               </h2>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.2rem 0 0 0' }}>
-                Todas as reservas registradas em seu nome ({currentUser?.name || 'Docente'})
-              </p>
             </div>
 
             {myAllocations.length === 0 ? (
-              <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '0.75rem', padding: '3rem 2rem', textAlign: 'center' }}>
+              <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '0.75rem', padding: isMobile ? '2rem 1rem' : '3rem 2rem', textAlign: 'center' }}>
                 <Calendar size={40} color="#cbd5e1" style={{ marginBottom: '1rem' }} />
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#334155', margin: 0 }}>Você não possui alocações ativas</h3>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#334155', margin: 0 }}>Nenhuma reserva</h3>
                 <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.4rem' }}>
-                  Acesse o Mapa Interativo para agendar horários em salas de aula ou laboratórios.
+                  Reserve uma sala pelo Mapa.
                 </p>
               </div>
             ) : (
@@ -859,7 +813,7 @@ export default function SettingsModule({
 
                 {active.length > 0 && (
                   <div>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#15803d', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>EM ANDAMENTO AGORA</div>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#15803d', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>EM ANDAMENTO</div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: '1rem' }}>
                       {active.map(r => <ReservationCard key={r.id} r={r} highlight="active" />)}
                     </div>
@@ -868,7 +822,7 @@ export default function SettingsModule({
 
                 {upcoming.length > 0 && (
                   <div>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#1d4ed8', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>PRÓXIMAS RESERVAS</div>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#1d4ed8', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>PRÓXIMAS</div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: '1rem' }}>
                       {upcoming.map(r => <ReservationCard key={r.id} r={r} highlight="upcoming" />)}
                     </div>

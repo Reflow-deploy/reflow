@@ -317,3 +317,14 @@ body {
   box-shadow: 0 0 0 2px #38bdf8, 0 8px 20px rgba(56, 189, 248, 0.3) !important;
 }
 
+
+/* iPhone: o Safari dá zoom automático na página ao focar um campo com fonte
+   menor que 16px (e não volta sozinho). Vale pro app todo, inclusive campos
+   com font-size inline — por isso o !important. Só em telas estreitas. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
