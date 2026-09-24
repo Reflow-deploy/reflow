@@ -354,5 +354,8 @@ body {
     appearance: none;
     min-width: 0 !important;
     max-width: 100%;
+    /* Mesmo motivo do select: sem o visual nativo o iOS pinta o valor de azul. */
+    color: #000000;
+    -webkit-text-fill-color: currentColor;
   }
 }
