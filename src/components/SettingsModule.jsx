@@ -466,10 +466,12 @@ export default function SettingsModule({
                         <span>{col.phone}</span>
                       </div>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Clock size={14} color="#64748b" />
-                      <span>{col.startTime} às {col.endTime}</span>
-                    </div>
+                    {col.startTime && col.endTime && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Clock size={14} color="#64748b" />
+                        <span>{col.startTime} às {col.endTime}</span>
+                      </div>
+                    )}
                   </div>
 
                   {col.workDays && col.workDays.length > 0 && (
