@@ -14,6 +14,19 @@ export default function ModalAddCollaborator({ onClose, onSubmit, initialData = 
     fontSize: '0.875rem', outline: 'none', fontFamily: 'inherit'
   };
   const twoCols = isMobile ? '1fr' : 'minmax(0, 1fr) minmax(0, 1fr)';
+  // No iPhone, <input type="time"> e <select> ganham um visual cinza nativo e o
+  // horário ignora a largura da coluna (vazava do cartão). appearance:none +
+  // fundo branco deixa iguais aos outros campos; o select ganha uma seta própria.
+  const timeStyle = {
+    ...inputStyle, display: 'block', WebkitAppearance: 'none', appearance: 'none',
+    textAlign: 'left', minHeight: '2.75rem', backgroundColor: '#ffffff'
+  };
+  const selectStyle = {
+    ...inputStyle, WebkitAppearance: 'none', appearance: 'none', minHeight: '2.75rem',
+    backgroundColor: '#ffffff', paddingRight: '2.2rem', backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 0.7rem center', backgroundSize: '1rem',
+    backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")"
+  };
 
   const [name, setName]               = useState(initialData?.name       || '');
   const [category, setCategory]       = useState(initialData?.category   || 'Docente');
@@ -58,9 +71,9 @@ export default function ModalAddCollaborator({ onClose, onSubmit, initialData = 
 
   return (
     <div className="modal-overlay animate-fade-in">
-      <div className="card-reflow" style={{ width: '100%', maxWidth: '520px', padding: isMobile ? '1.1rem' : '1.5rem', position: 'relative' }}>
+      <div className="card-reflow" style={{ width: '100%', maxWidth: '520px', padding: 0, position: 'relative', display: 'flex', flexDirection: 'column', maxHeight: '92dvh', overflow: 'hidden' }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, padding: isMobile ? '1rem 1.1rem 0.8rem' : '1.25rem 1.5rem 0.9rem', borderBottom: '1px solid #f1f5f9' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.1rem', color: '#0f2942' }}>
             {isEditing ? <Edit3 size={20} color="#0f2942" /> : <UserPlus size={20} color="#0f2942" />}
             {isEditing ? 'Editar colaborador' : 'Novo colaborador'}
@@ -70,7 +83,8 @@ export default function ModalAddCollaborator({ onClose, onSubmit, initialData = 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', display: 'flex', flexDirection: 'column', gap: isMobile ? '0.85rem' : '1rem', padding: isMobile ? '0.9rem 1.1rem' : '1rem 1.5rem' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '0.35rem' }}>
               Nome completo *
@@ -93,7 +107,7 @@ export default function ModalAddCollaborator({ onClose, onSubmit, initialData = 
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                style={inputStyle}
+                style={selectStyle}
               >
                 <option value="Docente">Docente</option>
                 <option value="Limpeza/Apoio">Limpeza / Apoio</option>
@@ -158,7 +172,7 @@ export default function ModalAddCollaborator({ onClose, onSubmit, initialData = 
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                style={inputStyle}
+                style={timeStyle}
               />
             </div>
 
@@ -170,7 +184,7 @@ export default function ModalAddCollaborator({ onClose, onSubmit, initialData = 
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                style={inputStyle}
+                style={timeStyle}
               />
             </div>
           </div>
@@ -191,6 +205,7 @@ export default function ModalAddCollaborator({ onClose, onSubmit, initialData = 
                     style={{
                       flex: 1,
                       padding: '0.5rem',
+                      minHeight: '2.6rem',
                       borderRadius: '0.375rem',
                       border: 'none',
                       backgroundColor: isSelected ? '#15803d' : '#e2e8f0',
@@ -221,8 +236,10 @@ export default function ModalAddCollaborator({ onClose, onSubmit, initialData = 
             />
           </div>
 
-          {/* Action Footer */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: isMobile ? '0.5rem' : '1rem', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>
+          </div>
+
+          {/* Action Footer — fixo, sempre visível (só o miolo acima rola) */}
+          <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', padding: isMobile ? '0.75rem 1.1rem calc(0.75rem + env(safe-area-inset-bottom))' : '0.9rem 1.5rem', borderTop: '1px solid #f1f5f9', backgroundColor: '#ffffff' }}>
             <button
               type="button"
               onClick={onClose}
