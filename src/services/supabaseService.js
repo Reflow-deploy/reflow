@@ -230,6 +230,56 @@ export async function loadInitialData() {
   }
 }
 
+/**
+ * Recarrega TODOS os dados do banco de forma "segura", pra ressincronizar a
+ * tela depois de uma queda do Realtime, de a aba ter ficado em segundo plano
+ * ou de a internet voltar.
+ *
+ * Diferente de loadInitialData(), NUNCA cai em dados padrão nem semeia o
+ * banco: qualquer erro devolve null e o chamador simplesmente mantém o que
+ * já está na tela. Sem essa cautela, uma falha de rede momentânea trocaria os
+ * dados reais pelos de exemplo.
+ */
+export async function reloadAllData() {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const results = await Promise.all([
+      supabase.from('spaces').select('*'),
+      supabase.from('allocations').select('*'),
+      supabase.from('occurrences').select('*'),
+      supabase.from('audit_logs').select('*'),
+      supabase.from('collaborators').select('*'),
+      supabase.from('classes').select('*')
+    ]);
+    if (results.some(r => r.error)) return null;
+
+    const [spacesRes, allocRes, occRes, auditRes, colRes, classRes] = results;
+    // Uma escola sempre tem salas. Lista vazia sem erro costuma ser sessão
+    // expirada (o RLS filtra tudo em silêncio) — não apaga a tela por isso.
+    if (!spacesRes.data || spacesRes.data.length === 0) return null;
+
+    const allocations = (allocRes.data || []).map(mapAllocationRow);
+    const spaces = spacesRes.data.map(sp => ({
+      ...mapSpaceRow(sp),
+      scheduleToday: allocations
+        .filter(a => a.spaceId === String(sp.id))
+        .map(allocationToScheduleEntry)
+    }));
+
+    return {
+      spaces,
+      allocations,
+      occurrences: (occRes.data || []).map(mapOccurrenceRow),
+      auditLogs: (auditRes.data || []).map(mapAuditLogRow),
+      collaborators: (colRes.data || []).map(mapCollaboratorRow),
+      classes: (classRes.data || []).map(mapClassRow)
+    };
+  } catch (err) {
+    console.warn('[Reflow] Não foi possível ressincronizar os dados:', err);
+    return null;
+  }
+}
+
 // -------------------------------------------------------------
 // SEMENTES AUTOMÁTICAS (Caso o banco de dados esteja limpo)
 // -------------------------------------------------------------

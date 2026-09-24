@@ -33,16 +33,21 @@ import {
  * @param {(eventType: 'INSERT'|'UPDATE'|'DELETE', row: object|null, oldRow: object) => void} handlers.onAuditLogChange
  * @param {(eventType: 'INSERT'|'UPDATE'|'DELETE', row: object|null, oldRow: object) => void} handlers.onCollaboratorChange
  * @param {(eventType: 'INSERT'|'UPDATE'|'DELETE', row: object|null, oldRow: object) => void} handlers.onClassChange
+ * @param {(status: string, err?: Error) => void} [onStatus] chamado com SUBSCRIBED / CHANNEL_ERROR / TIMED_OUT / CLOSED
  * @returns {() => void} função de limpeza — cancela a inscrição (chamar no cleanup do useEffect)
  */
-export function subscribeToChanges(handlers) {
+export function subscribeToChanges(handlers, onStatus = () => {}) {
   if (!isSupabaseConfigured()) return () => {};
 
   // payload.new só vem preenchido em INSERT/UPDATE; em DELETE só payload.old
   // existe (e, por padrão, só com a chave primária — suficiente pra todo
   // handler aqui, que sempre remove por id).
+  // Nome único por inscrição: recriar o canal com o MESMO nome logo depois de
+  // remover o anterior gera uma corrida (o "leave" do antigo pode derrubar o
+  // novo no servidor), e o canal ficava mudo.
+  const channelName = `reflow-db-changes-${Math.random().toString(36).slice(2, 10)}`;
   const channel = supabase
-    .channel('reflow-db-changes')
+    .channel(channelName)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'spaces' }, (payload) => {
       handlers.onSpaceChange?.(payload.eventType, payload.new?.id != null ? mapSpaceRow(payload.new) : null, payload.old);
     })
@@ -61,7 +66,7 @@ export function subscribeToChanges(handlers) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'classes' }, (payload) => {
       handlers.onClassChange?.(payload.eventType, payload.new?.id != null ? mapClassRow(payload.new) : null, payload.old);
     })
-    .subscribe();
+    .subscribe((status, err) => onStatus(status, err));
 
   return () => {
     supabase.removeChannel(channel);

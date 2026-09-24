@@ -40,7 +40,8 @@ import {
   dbReleaseExpiredAllocations,
   dbCheckCollaboratorExists,
   dbGetAdminAuditLog,
-  allocationToScheduleEntry
+  allocationToScheduleEntry,
+  reloadAllData
 } from './services/supabaseService';
 import { subscribeToChanges } from './services/realtimeService';
 import { eventService, EVENTS } from './services/eventService';
@@ -245,8 +246,49 @@ export default function App() {
   // gerado por uma ação deste mesmo cliente (idempotente, sem duplicar).
   // Só assina depois de autenticado: a RLS (is_approved()) bloquearia os
   // eventos de qualquer forma para quem ainda não tem sessão.
+  // Estado da conexão em tempo real e controle de ressincronização.
+  const realtimeStatusRef = useRef('CLOSED');
+  const realtimeEventsRef = useRef(0);   // eventos recebidos (detecta corrida com a recarga)
+  const resyncingRef = useRef(false);
+  const lastResyncRef = useRef(0);
+
+  // Recarrega tudo do banco. É a rede de proteção do Realtime: celular em
+  // segundo plano suspende o WebSocket e perde eventos; redes de escola às
+  // vezes bloqueiam WebSocket; a conexão pode cair. Sem isso, quem perdeu o
+  // evento só via a mudança com F5. reloadAllData() nunca troca os dados
+  // reais por dados de exemplo (devolve null em qualquer erro).
+  const resyncData = useCallback(async () => {
+    if (resyncingRef.current || Date.now() - lastResyncRef.current < 2000) return;
+    resyncingRef.current = true;
+    lastResyncRef.current = Date.now();
+    const eventsBefore = realtimeEventsRef.current;
+    let raced = false;
+    try {
+      const data = await reloadAllData();
+      if (!data) return;
+      // Chegou evento em tempo real enquanto buscava: o resultado pode já estar
+      // velho. Descarta e tenta de novo em seguida.
+      if (realtimeEventsRef.current !== eventsBefore) { raced = true; return; }
+      setSpaces(data.spaces);
+      setAllocations(data.allocations);
+      setOccurrences(data.occurrences);
+      setAuditLogs(data.auditLogs);
+      setCollaborators(data.collaborators);
+      setClasses(data.classes);
+      setSelectedSpace(prev => prev ? (data.spaces.find(sp => sp.id === prev.id) || null) : prev);
+    } finally {
+      resyncingRef.current = false;
+      if (raced) { lastResyncRef.current = 0; setTimeout(resyncData, 700); }
+    }
+  }, []);
+
+  // Depende só do id do usuário (não do objeto `session`): o Supabase emite
+  // "login" toda vez que a aba volta ao foco, e com `session` na dependência
+  // o canal era derrubado e recriado a cada retorno.
+  const realtimeUserId = session?.user?.id;
+
   useEffect(() => {
-    if (!session) return;
+    if (!realtimeUserId) return;
 
     // Substitui o item existente (mesmo id) ou insere no início da lista.
     const upsertById = (list, item) => {
@@ -257,7 +299,7 @@ export default function App() {
       return copy;
     };
 
-    const unsubscribe = subscribeToChanges({
+    const handlers = {
       onSpaceChange: (eventType, space, oldRow) => {
         if (eventType === 'DELETE') {
           const deletedId = String(oldRow.id);
@@ -366,10 +408,45 @@ export default function App() {
         }
         setClasses(prev => upsertById(prev, cls));
       }
+    };
+
+    // Conta cada evento recebido (usado por resyncData pra detectar corrida).
+    const countedHandlers = Object.fromEntries(
+      Object.entries(handlers).map(([name, fn]) => [name, (...args) => { realtimeEventsRef.current += 1; fn(...args); }])
+    );
+
+    const unsubscribe = subscribeToChanges(countedHandlers, (status) => {
+      const previous = realtimeStatusRef.current;
+      realtimeStatusRef.current = status;
+      if (status !== 'SUBSCRIBED') console.warn('[Reflow] Realtime:', status);
+      // (Re)conectou: pode ter perdido eventos enquanto estava fora.
+      if (status === 'SUBSCRIBED' && previous !== 'SUBSCRIBED') resyncData();
     });
 
-    return unsubscribe;
-  }, [session]);
+    return () => {
+      realtimeStatusRef.current = 'CLOSED';
+      unsubscribe();
+    };
+  }, [realtimeUserId, resyncData]);
+
+  // Gatilhos de ressincronização: voltar pra aba/app, internet voltando, e um
+  // plano B a cada 15s SÓ enquanto o Realtime não estiver conectado.
+  useEffect(() => {
+    if (!realtimeUserId) return;
+    const onVisible = () => { if (document.visibilityState === 'visible') resyncData(); };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('pageshow', onVisible);
+    window.addEventListener('online', resyncData);
+    const fallbackPoll = setInterval(() => {
+      if (document.visibilityState === 'visible' && realtimeStatusRef.current !== 'SUBSCRIBED') resyncData();
+    }, 15000);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('pageshow', onVisible);
+      window.removeEventListener('online', resyncData);
+      clearInterval(fallbackPoll);
+    };
+  }, [realtimeUserId, resyncData]);
 
   // 🔐 Garante que o usuário nunca fique numa aba à qual seu cargo não tem acesso
   // (ex: Equipe de Suporte é restrita à Central de Ocorrências)
