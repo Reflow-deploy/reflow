@@ -119,6 +119,7 @@ export default function AnalyticsDashboard({ spaces = [], occurrences = [], allo
 
   return (
     <div style={{ padding: isMobile ? '1.25rem' : '1.5rem 2rem', flex: 1, overflowY: 'auto' }}>
+      {!isMobile && (
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f2942', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
           <BarChart3 size={22} />
@@ -128,6 +129,7 @@ export default function AnalyticsDashboard({ spaces = [], occurrences = [], allo
           Visão geral de ocorrências e ocupação de salas
         </p>
       </div>
+      )}
 
       {/* KPI tiles */}
       <div style={{

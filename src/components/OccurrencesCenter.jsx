@@ -53,6 +53,7 @@ export default function OccurrencesCenter({
     <div style={{ padding: isMobile ? '1.25rem 1.25rem 5rem 1.25rem' : '1.5rem 2rem', flex: 1, overflowY: 'auto' }}>
       {/* Header Bar */}
       <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', marginBottom: isMobile ? '1rem' : '1.5rem', flexWrap: 'wrap', gap: isMobile ? '0.75rem' : '1rem' }}>
+        {!isMobile && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <h1 style={{ fontSize: isMobile ? '1.25rem' : '1.4rem', fontWeight: 800, color: '#0f2942', margin: 0 }}>
@@ -79,6 +80,7 @@ export default function OccurrencesCenter({
             Problemas nos espaços e e-mails de alerta enviados.
           </p>
         </div>
+        )}
 
         {/* Navigation Tabs & Clear Button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexDirection: isMobile ? 'column' : 'row', alignSelf: isMobile ? 'stretch' : 'auto' }}>

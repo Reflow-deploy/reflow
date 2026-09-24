@@ -2,7 +2,7 @@ import React from 'react';
 import { Search, Menu } from 'lucide-react';
 import { useIsMobile } from '../utils/useIsMobile';
 
-export default function Header({ searchQuery, setSearchQuery, onSearchSubmit, showSearch = true, isSidebarOpen, onToggleSidebar = () => {} }) {
+export default function Header({ searchQuery, setSearchQuery, onSearchSubmit, showSearch = true, title = null, isSidebarOpen, onToggleSidebar = () => {} }) {
   const isMobile = useIsMobile();
 
   const handleSubmit = (e) => {
@@ -57,7 +57,10 @@ export default function Header({ searchQuery, setSearchQuery, onSearchSubmit, sh
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por sala, professor, equipamentos (projetor), mesas ou capacidade..."
+              placeholder={isMobile ? "Buscar sala ou equipamento" : "Buscar sala, professor ou equipamento"}
+              enterKeyHint="search"
+              autoComplete="off"
+              aria-label="Buscar"
               style={{
                 width: '100%',
                 padding: '0.6rem 1rem 0.6rem 2.6rem',
@@ -71,7 +74,7 @@ export default function Header({ searchQuery, setSearchQuery, onSearchSubmit, sh
               }}
             />
           </div>
-          <button
+          {!isMobile && <button
             type="submit"
             style={{
               backgroundColor: '#0b2238',
@@ -86,10 +89,14 @@ export default function Header({ searchQuery, setSearchQuery, onSearchSubmit, sh
             }}
           >
             Buscar
-          </button>
+          </button>}
         </form>
       ) : (
-        <div style={{ flex: 1 }} />
+        /* Em mobile, o título da página ocupa a barra (que antes ficava vazia
+           fora do mapa) — e as páginas escondem o próprio título pra não repetir. */
+        isMobile && title
+          ? <h1 style={{ flex: 1, margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f2942', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</h1>
+          : <div style={{ flex: 1 }} />
       )}
     </header>
   );

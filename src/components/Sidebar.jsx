@@ -28,12 +28,13 @@ export default function Sidebar({ activeTab, setActiveTab, spacesCount, occupied
     )}
     <aside style={{
       width: '260px',
-      height: '100vh',
+      height: isMobile ? '100dvh' : '100vh',
+      overflowY: 'auto',
       backgroundColor: '#ffffff',
       borderRight: '1px solid #e2e8f0',
       display: 'flex',
       flexDirection: 'column',
-      padding: '1.75rem 1.25rem 2rem 1.25rem',
+      padding: isMobile ? '1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom)) 1.25rem' : '1.75rem 1.25rem 2rem 1.25rem',
       position: 'fixed',
       left: 0,
       top: 0,
@@ -124,7 +125,7 @@ export default function Sidebar({ activeTab, setActiveTab, spacesCount, occupied
           }}
         >
           <LogOut size={16} />
-          Sair da Conta
+          Sair
         </button>
 
         {/* OCUPAÇÃO GERAL Widget */}
@@ -133,14 +134,14 @@ export default function Sidebar({ activeTab, setActiveTab, spacesCount, occupied
           paddingTop: '1rem'
         }}>
           <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
-            OCUPAÇÃO GERAL
+            OCUPAÇÃO
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#475569', marginBottom: '0.35rem' }}>
-            <span>Salas Livres</span>
+            <span>Livres</span>
             <span style={{ fontWeight: 700, color: '#15803d' }}>{freeCount} / {spacesCount}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#475569' }}>
-            <span>Salas Ocupadas</span>
+            <span>Ocupadas</span>
             <span style={{ fontWeight: 700, color: '#b91c1c' }}>{occupiedCount} / {spacesCount}</span>
           </div>
         </div>
@@ -175,11 +176,11 @@ export default function Sidebar({ activeTab, setActiveTab, spacesCount, occupied
             }}>
               {currentUser?.avatar
                 ? <img src={currentUser.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : (currentUser?.name || 'Filipe Guimarães').split(' ').slice(0,2).map(n => n[0]).join('')
+                : (currentUser?.name || 'Usuário').split(' ').slice(0,2).map(n => n[0]).join('')
               }
             </div>
             <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#334155', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {currentUser?.name || 'Prof. Filipe Guimarães'}
+              {currentUser?.name || 'Usuário'}
             </span>
             <ChevronDown size={14} color="#64748b" />
           </div>
@@ -198,7 +199,7 @@ export default function Sidebar({ activeTab, setActiveTab, spacesCount, occupied
               zIndex: 60
             }}>
               <div style={{ padding: '0.4rem 0.5rem', fontSize: '0.72rem', color: '#64748b', borderBottom: '1px solid #f1f5f9', marginBottom: '0.25rem' }}>
-                {currentUser?.role || 'Professor Responsável'}
+                {currentUser?.role || 'Sem cargo'}
               </div>
               <button
                 onClick={() => { setShowUserMenu(false); setShowProfileModal(true); }}

@@ -116,6 +116,7 @@ export default function SettingsModule({
     <div style={{ padding: isMobile ? '1rem 1rem 5rem 1rem' : '1.5rem 2rem', flex: 1, overflowY: 'auto' }}>
       {/* Settings Navigation Bar */}
       <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', marginBottom: isMobile ? '1rem' : '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+        {!isMobile && (
         <div>
           <h1 style={{ fontSize: isMobile ? '1.25rem' : '1.4rem', fontWeight: 800, color: '#0f2942', margin: 0 }}>
             Configurações
@@ -124,6 +125,7 @@ export default function SettingsModule({
             Reservas, turmas, equipe e salas.
           </p>
         </div>
+        )}
 
         {/* Sub-Tabs */}
         <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '0.25rem', borderRadius: '0.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>

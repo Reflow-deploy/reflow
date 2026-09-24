@@ -144,7 +144,7 @@ export default function App() {
     }
     setSession(null);
     setCurrentUser(null);
-    showToast('Você saiu da sua conta.');
+    showToast('Você saiu.');
   };
 
   // Logout forçado (não pelo próprio usuário) — usado quando o polling de
@@ -209,10 +209,10 @@ export default function App() {
     try {
       await dbUpdateCollaboratorSystemRole(colId, newRole);
       setCollaborators(prev => prev.map(c => c.id === colId ? { ...c, systemRole: newRole } : c));
-      showToast(`Cargo do sistema atualizado para ${newRole}! 🛡️`);
+      showToast(`Acesso alterado para ${newRole}.`);
     } catch (e) {
       console.error('[Reflow] Erro ao atualizar cargo do sistema:', e);
-      showToast('Não foi possível atualizar o cargo. Tente novamente.');
+      showToast('Erro ao atualizar o acesso. Tente de novo.');
     }
   };
 
@@ -351,7 +351,7 @@ export default function App() {
         // e a UI (abas permitidas, tela de Pendente etc.) sozinha.
         if (col.userId && col.userId === currentUserRef.current?.id && col.systemRole !== currentUserRef.current?.role) {
           supabase.auth.refreshSession().then(() => {
-            showToast(`Seu cargo foi atualizado para ${col.systemRole}. 🔄`);
+            showToast(`Seu acesso agora é ${col.systemRole}.`);
           });
         }
 
@@ -578,12 +578,12 @@ export default function App() {
         const res = await sendOccurrenceEmail({ to: targetEmail, subject, bodyHtml, bodyText });
         gmailMsgId = res.id;
         apiStatusText = res.statusText;
-        showToast(`📧 E-mail entregue na caixa ${targetEmail}!`);
+        showToast(`📧 E-mail enviado para ${targetEmail}.`);
       } catch (err) {
         console.error('Erro no envio do e-mail:', err);
         deliveryFailed = true;
         apiStatusText = `FALHA NO ENVIO — ${err.message || 'erro desconhecido'}`;
-        showToast(`⚠️ Não foi possível enviar o e-mail para ${targetEmail}. A ocorrência foi registrada mesmo assim.`);
+        showToast(`⚠️ Ocorrência registrada, mas o e-mail para ${targetEmail} falhou.`);
       }
 
       // Cria a entrada de auditoria
@@ -620,7 +620,7 @@ Status Atual: ABERTO`
         await dbAddOccurrence(occurrence, newAudit);
       } catch (err) {
         console.error('[Reflow] Erro ao salvar ocorrência no banco:', err);
-        showToast('⚠️ A ocorrência foi registrada na tela, mas falhou ao salvar no banco — pode não aparecer se a página for recarregada.');
+        showToast('⚠️ Não foi possível salvar a ocorrência. Ela pode sumir ao recarregar.');
       }
       setAuditLogs(prev => [newAudit, ...prev]);
     });
@@ -640,7 +640,7 @@ Status Atual: ABERTO`
 
     const targetSpace = spaces.find(s => s.id === spaceId);
     if (targetSpace && targetSpace.status === 'MANUTENCAO') {
-      showToast('⚠️ Sala em MANUTENÇÃO! Não é possível alocar este ambiente.');
+      showToast('⚠️ Sala em manutenção. Não dá para reservar.');
       return;
     }
 
@@ -730,9 +730,9 @@ Status Atual: ABERTO`
 
     if (!isRecurring) {
       if (succeeded.length > 0) {
-        showToast('Espaço Alocado com Sucesso! 🟢');
+        showToast('Reserva confirmada 🟢');
       } else {
-        showToast(`⚠️ ${failed[0]?.reason || 'Não foi possível confirmar a reserva. Tente novamente.'}`);
+        showToast(`⚠️ ${failed[0]?.reason || 'Não foi possível reservar. Tente de novo.'}`);
       }
     } else {
       setSeriesResult({ succeeded, failed, className, spaceName: targetSpace?.name || '' });
@@ -744,7 +744,7 @@ Status Atual: ABERTO`
       await dbDeleteAllocation(allocationId, spaceId);
     } catch (err) {
       console.error('[Reflow] Erro ao cancelar reserva:', err);
-      showToast('⚠️ Não foi possível cancelar a reserva. Tente novamente.');
+      showToast('⚠️ Erro ao cancelar a reserva. Tente de novo.');
       return;
     }
 
@@ -774,7 +774,7 @@ Status Atual: ABERTO`
       });
     }
 
-    showToast('Reserva Cancelada 🗑️');
+    showToast('Reserva cancelada');
   };
 
   // Cancela TODAS as ocorrências de uma série recorrente de uma vez —
@@ -785,7 +785,7 @@ Status Atual: ABERTO`
       await dbDeleteAllocationSeries(seriesId, affectedSpaceIds);
     } catch (err) {
       console.error('[Reflow] Erro ao cancelar série:', err);
-      showToast('⚠️ Não foi possível cancelar a série. Tente novamente.');
+      showToast('⚠️ Erro ao cancelar a série. Tente de novo.');
       return;
     }
 
@@ -808,7 +808,7 @@ Status Atual: ABERTO`
       });
     }
 
-    showToast('Série de Reservas Cancelada 🗑️');
+    showToast('Série cancelada');
   };
 
   // 🔧 Atualiza o status de um espaço (estado local + banco) — usado pra
@@ -820,7 +820,7 @@ Status Atual: ABERTO`
     // falhar em vez de engolir o erro em silêncio.
     dbUpdateSpaceStatus(spaceId, status).catch(err => {
       console.error('[Reflow] Erro ao atualizar status da sala:', err);
-      showToast('⚠️ Não foi possível atualizar o status da sala no banco.');
+      showToast('⚠️ Erro ao atualizar o status da sala.');
     });
     setSpaces(prev => prev.map(sp => sp.id === spaceId ? { ...sp, status } : sp));
     setSelectedSpace(prev => (prev && prev.id === spaceId) ? { ...prev, status } : prev);
@@ -857,7 +857,7 @@ Status Atual: ABERTO`
       await dbUpdateOccurrenceStatus(id, newStatus);
     } catch (err) {
       console.error('[Reflow] Erro ao atualizar status da ocorrência:', err);
-      showToast('⚠️ Não foi possível atualizar o status do chamado. Tente novamente.');
+      showToast('⚠️ Erro ao atualizar o chamado. Tente de novo.');
       return;
     }
 
@@ -886,7 +886,7 @@ Status Atual: ABERTO`
       return updated;
     });
 
-    showToast(newStatus === 'RESOLVIDO' ? 'Chamado Marcado como Resolvido! ✅' : 'Chamado Reaberto! 🔓');
+    showToast(newStatus === 'RESOLVIDO' ? 'Chamado resolvido ✅' : 'Chamado reaberto');
   };
 
   // 🗑️ Qualquer cargo pode apagar a própria solicitação (a RLS garante
@@ -896,7 +896,7 @@ Status Atual: ABERTO`
       await dbDeleteOccurrence(id);
     } catch (err) {
       console.error('[Reflow] Erro ao excluir ocorrência:', err);
-      showToast('⚠️ Não foi possível excluir a solicitação. Tente novamente.');
+      showToast('⚠️ Erro ao excluir. Tente de novo.');
       return;
     }
 
@@ -914,7 +914,7 @@ Status Atual: ABERTO`
       return updated;
     });
 
-    showToast('Solicitação excluída. 🗑️');
+    showToast('Solicitação excluída');
   };
 
   const handleAddCollaborator = async (colData) => {
@@ -927,16 +927,16 @@ Status Atual: ABERTO`
       await dbSaveCollaborator(finalData);
     } catch (err) {
       console.error('[Reflow] Erro ao salvar colaborador:', err);
-      showToast('⚠️ Não foi possível salvar o colaborador. Tente novamente.');
+      showToast('⚠️ Erro ao salvar o colaborador. Tente de novo.');
       return;
     }
 
     if (colData.id && collaborators.find(c => c.id === colData.id)) {
       setCollaborators(prev => prev.map(c => c.id === colData.id ? finalData : c));
-      showToast('Colaborador Atualizado! ✅');
+      showToast('Colaborador atualizado');
     } else {
       setCollaborators(prev => [finalData, ...prev]);
-      showToast('Colaborador Cadastrado! 👤');
+      showToast('Colaborador cadastrado');
     }
     setShowAddCollaboratorModal(false);
     setCollaboratorToEdit(null);
@@ -947,11 +947,11 @@ Status Atual: ABERTO`
       await dbDeleteCollaborator(id);
     } catch (err) {
       console.error('[Reflow] Erro ao remover colaborador:', err);
-      showToast('⚠️ Não foi possível remover o colaborador. Tente novamente.');
+      showToast('⚠️ Erro ao remover o colaborador. Tente de novo.');
       return;
     }
     setCollaborators(prev => prev.filter(c => c.id !== id));
-    showToast('Colaborador Removido');
+    showToast('Colaborador removido');
   };
 
   const handleAddClass = async (classData) => {
@@ -964,16 +964,16 @@ Status Atual: ABERTO`
       }
     } catch (err) {
       console.error('[Reflow] Erro ao salvar turma:', err);
-      showToast('⚠️ Não foi possível salvar a turma. Tente novamente.');
+      showToast('⚠️ Erro ao salvar a turma. Tente de novo.');
       return;
     }
 
     if (exists) {
       setClasses(prev => prev.map(c => c.id === classData.id ? classData : c));
-      showToast('Turma Atualizada com Sucesso! 📚');
+      showToast('Turma atualizada');
     } else {
       setClasses(prev => [...prev, classData]);
-      showToast('Turma Adicionada! 📚');
+      showToast('Turma cadastrada');
     }
     setShowAddClassModal(false);
     setClassToEdit(null);
@@ -984,11 +984,11 @@ Status Atual: ABERTO`
       await dbDeleteClass(id);
     } catch (err) {
       console.error('[Reflow] Erro ao remover turma:', err);
-      showToast('⚠️ Não foi possível remover a turma. Tente novamente.');
+      showToast('⚠️ Erro ao remover a turma. Tente de novo.');
       return;
     }
     setClasses(prev => prev.filter(c => c.id !== id));
-    showToast('Turma Removida');
+    showToast('Turma removida');
   };
 
   const handleUpdateSpaceFeatures = async (spaceId, features) => {
@@ -996,7 +996,7 @@ Status Atual: ABERTO`
       await dbUpdateSpaceFeatures(spaceId, features);
     } catch (err) {
       console.error('[Reflow] Erro ao atualizar recursos da sala:', err);
-      showToast('⚠️ Não foi possível salvar os recursos da sala. Tente novamente.');
+      showToast('⚠️ Erro ao salvar os recursos da sala. Tente de novo.');
       return;
     }
 
@@ -1009,7 +1009,7 @@ Status Atual: ABERTO`
     if (selectedSpace && selectedSpace.id === spaceId) {
       setSelectedSpace(prev => ({ ...prev, equipments: features.equipments, deskType: features.deskType }));
     }
-    showToast('Recursos e Mobiliário da sala atualizados! 🛠️');
+    showToast('Recursos da sala atualizados');
   };
 
   const handleUpdateSpace = async (updatedSpaceData) => {
@@ -1017,7 +1017,7 @@ Status Atual: ABERTO`
       await dbUpdateSpace(updatedSpaceData);
     } catch (err) {
       console.error('[Reflow] Erro ao atualizar sala:', err);
-      showToast('⚠️ Não foi possível salvar as informações da sala. Tente novamente.');
+      showToast('⚠️ Erro ao salvar a sala. Tente de novo.');
       return;
     }
 
@@ -1025,7 +1025,7 @@ Status Atual: ABERTO`
     if (selectedSpace && selectedSpace.id === updatedSpaceData.id) {
       setSelectedSpace(updatedSpaceData);
     }
-    showToast('Informações da sala salvas com sucesso no banco! 🏢');
+    showToast('Sala salva');
   };
 
   const handleClearHistory = async () => {
@@ -1033,12 +1033,12 @@ Status Atual: ABERTO`
       await dbClearHistory();
     } catch (err) {
       console.error('[Reflow] Erro ao limpar histórico:', err);
-      showToast('⚠️ Não foi possível limpar o histórico. Tente novamente.');
+      showToast('⚠️ Erro ao limpar o histórico. Tente de novo.');
       return;
     }
     setOccurrences([]);
     setAuditLogs([]);
-    showToast('Histórico de Ocorrências e Auditoria de E-mails Limpo! 🗑️');
+    showToast('Histórico limpo');
   };
 
   const handleResendEmail = async (auditLog) => {
@@ -1049,10 +1049,10 @@ Status Atual: ABERTO`
         bodyHtml: `<p>${auditLog.snippet}</p>`,
         bodyText: auditLog.fullBody || auditLog.snippet
       });
-      showToast(`Alerta Reenviado com Sucesso para ${auditLog.to}! 📧`);
+      showToast(`📧 Alerta reenviado para ${auditLog.to}`);
     } catch (err) {
       console.error('Erro ao reenviar e-mail:', err);
-      showToast(`⚠️ Não foi possível reenviar o alerta para ${auditLog.to}.`);
+      showToast(`⚠️ Erro ao reenviar para ${auditLog.to}.`);
     }
   };
 
@@ -1116,9 +1116,9 @@ Status Atual: ABERTO`
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           showSearch={activeTab === 'map'}
-          onSearchSubmit={(q) => {
+          title={{ occurrences: 'Ocorrências', dashboard: 'Dashboard', settings: 'Configurações' }[activeTab]}
+          onSearchSubmit={() => {
             setActiveTab('map');
-            showToast(`Buscando por: "${q}"`);
           }}
           currentUser={currentUser}
           isSidebarOpen={isSidebarOpen}
@@ -1267,16 +1267,17 @@ Status Atual: ABERTO`
 
       {/* Toast Notification Banner */}
       {toastMessage && (
-        <div className="animate-fade-in" style={{
+        <div className="animate-fade-in" role="status" style={{
           position: 'fixed',
-          bottom: '2rem',
+          // Em mobile sobe acima da sirene (FAB), que ocupa o canto inferior direito.
+          bottom: isMobile ? 'calc(4.75rem + env(safe-area-inset-bottom))' : '2rem',
           left: isMobile ? '1rem' : '280px',
           right: isMobile ? '1rem' : 'auto',
           backgroundColor: '#0b2238',
           color: '#ffffff',
           fontWeight: 600,
           fontSize: '0.875rem',
-          padding: '0.85rem 1.5rem',
+          padding: isMobile ? '0.7rem 1rem' : '0.85rem 1.5rem',
           borderRadius: '0.5rem',
           boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
           zIndex: 100,
