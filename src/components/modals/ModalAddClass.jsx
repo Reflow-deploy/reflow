@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, BookOpen, Check, Save } from 'lucide-react';
+import { useIsMobile } from '../../utils/useIsMobile';
 
 export default function ModalAddClass({ onClose, onSubmit, classToEdit = null }) {
+  const isMobile = useIsMobile();
   const [name, setName] = useState(classToEdit?.name || '');
   const [studentsCount, setStudentsCount] = useState(classToEdit?.studentsCount || 30);
 
@@ -24,11 +26,11 @@ export default function ModalAddClass({ onClose, onSubmit, classToEdit = null })
 
   return (
     <div className="modal-overlay animate-fade-in">
-      <div className="card-reflow" style={{ width: '100%', maxWidth: '420px', padding: '1.5rem', position: 'relative' }}>
+      <div className="card-reflow" style={{ width: '100%', maxWidth: '420px', padding: isMobile ? '1.1rem' : '1.5rem', position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.1rem', color: '#0f2942' }}>
             <BookOpen size={20} color="#0f2942" />
-            {classToEdit ? 'Editar Informações da Turma' : 'Adicionar Nova Turma'}
+            {classToEdit ? 'Editar turma' : 'Nova turma'}
           </div>
           <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8' }}>
             <X size={20} />
@@ -38,29 +40,30 @@ export default function ModalAddClass({ onClose, onSubmit, classToEdit = null })
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '0.35rem' }}>
-              Nome da Turma / Ano *
+              Nome da turma *
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex: 4º Ano - Informática"
-              style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }}
+              style={{ width: '100%', boxSizing: 'border-box', minWidth: 0, padding: '0.6rem 0.8rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', fontFamily: 'inherit' }}
               required
             />
           </div>
 
           <div>
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '0.35rem' }}>
-              Quantidade de Alunos *
+              Alunos *
             </label>
             <input
               type="number"
+              inputMode="numeric"
               min="1"
               max="500"
               value={studentsCount}
               onChange={(e) => setStudentsCount(e.target.value)}
-              style={{ width: '100%', padding: '0.6rem 0.8rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }}
+              style={{ width: '100%', boxSizing: 'border-box', minWidth: 0, padding: '0.6rem 0.8rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', fontFamily: 'inherit' }}
               required
             />
           </div>
@@ -69,16 +72,16 @@ export default function ModalAddClass({ onClose, onSubmit, classToEdit = null })
             <button
               type="button"
               onClick={onClose}
-              style={{ backgroundColor: '#f1f5f9', color: '#475569', fontWeight: 600, fontSize: '0.875rem', padding: '0.6rem 1.2rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer' }}
+              style={{ backgroundColor: '#f1f5f9', color: '#475569', fontWeight: 600, fontSize: '0.875rem', padding: '0.6rem 1.2rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', flex: isMobile ? 1 : 'none', minHeight: '2.6rem' }}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              style={{ backgroundColor: '#0b2238', color: '#ffffff', fontWeight: 600, fontSize: '0.875rem', padding: '0.6rem 1.4rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              style={{ backgroundColor: '#0b2238', color: '#ffffff', fontWeight: 600, fontSize: '0.875rem', padding: '0.6rem 1.4rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', flex: isMobile ? 1 : 'none', minHeight: '2.6rem' }}
             >
               {classToEdit ? <Save size={18} /> : <Check size={18} />}
-              {classToEdit ? 'Salvar Alterações' : 'Confirmar Turma'}
+              {classToEdit ? 'Salvar' : 'Cadastrar'}
             </button>
           </div>
         </form>

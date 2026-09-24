@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, Upload, ShieldCheck, UserCheck, Wrench, Lock, Check, Loader2 } from 'lucide-react';
 import { dbGetMyCollaboratorRecord } from '../../services/supabaseService';
+import { useIsMobile } from '../../utils/useIsMobile';
 
 const ROLE_ICONS = {
   'Administrador': ShieldCheck,
@@ -13,10 +14,11 @@ const ROLE_DESCRIPTIONS = {
   'Administrador': 'Acesso total ao sistema',
   'Direção': 'Acesso total ao sistema',
   'Professor': 'Aloca espaços e reporta ocorrências',
-  'Equipe de Suporte': 'Equipe técnica responsável por resolver falhas de infraestrutura'
+  'Equipe de Suporte': 'Resolve falhas de infraestrutura'
 };
 
 export default function ModalProfile({ currentUser, onClose, onSave }) {
+  const isMobile = useIsMobile();
   const [previewUrl, setPreviewUrl] = useState(currentUser?.avatar || null);
   const [isDragging, setIsDragging] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -79,6 +81,7 @@ export default function ModalProfile({ currentUser, onClose, onSave }) {
         backgroundColor: 'rgba(15,41,56,0.45)',
         backdropFilter: 'blur(4px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '1rem', boxSizing: 'border-box',
         animation: 'fadeIn 0.18s ease'
       }}
     >
@@ -90,7 +93,8 @@ export default function ModalProfile({ currentUser, onClose, onSave }) {
           borderRadius: '1.25rem',
           boxShadow: '0 24px 60px rgba(0,0,0,0.18)',
           width: '100%', maxWidth: '440px',
-          padding: '2rem',
+          padding: isMobile ? '1.25rem' : '2rem',
+          maxHeight: '90dvh', overflowY: 'auto',
           animation: 'slideUp 0.22s ease'
         }}
       >
@@ -99,7 +103,7 @@ export default function ModalProfile({ currentUser, onClose, onSave }) {
           <div>
             <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#0f1f2e' }}>Meu Perfil</h2>
             <p style={{ margin: '0.15rem 0 0', fontSize: '0.8rem', color: '#64748b' }}>
-              Gerencie seus dados e nível de acesso no sistema
+              Foto e nível de acesso
             </p>
           </div>
           <button
@@ -128,7 +132,7 @@ export default function ModalProfile({ currentUser, onClose, onSave }) {
               onClick={() => fileInputRef.current.click()}
               style={{
                 position: 'absolute', bottom: 0, right: 0,
-                width: '28px', height: '28px', borderRadius: '9999px',
+                width: isMobile ? '36px' : '28px', height: isMobile ? '36px' : '28px', borderRadius: '9999px',
                 backgroundColor: '#0b2238', border: '2px solid #fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
@@ -149,7 +153,7 @@ export default function ModalProfile({ currentUser, onClose, onSave }) {
         {/* Cargo (somente leitura — definido por um Administrador no backend) */}
         <div style={{ marginBottom: '1.25rem' }}>
           <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.5rem' }}>
-            Cargo / Tipo de Conta (Permissões):
+            Acesso
           </label>
           <div style={{
             display: 'flex',
@@ -174,7 +178,7 @@ export default function ModalProfile({ currentUser, onClose, onSave }) {
             <Lock size={14} color="#94a3b8" style={{ flexShrink: 0 }} />
           </div>
           <p style={{ margin: '0.4rem 0 0', fontSize: '0.7rem', color: '#94a3b8' }}>
-            Cargo definido por um Administrador. Fale com a coordenação para alterá-lo.
+            Definido por um Administrador.
           </p>
         </div>
 
@@ -203,7 +207,7 @@ export default function ModalProfile({ currentUser, onClose, onSave }) {
             <Upload size={16} color={isDragging ? '#0b2238' : '#64748b'} />
           </div>
           <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: '#334155' }}>
-            Clique ou arraste uma foto
+            {isMobile ? 'Toque para escolher uma foto' : 'Clique ou arraste uma foto'}
           </p>
         </div>
 
@@ -239,7 +243,7 @@ export default function ModalProfile({ currentUser, onClose, onSave }) {
               transition: 'background 0.25s'
             }}
           >
-            {saved ? <><Check size={15} /> Salvo!</> : 'Salvar Alterações'}
+            {saved ? <><Check size={15} /> Salvo!</> : 'Salvar'}
           </button>
         </div>
       </div>

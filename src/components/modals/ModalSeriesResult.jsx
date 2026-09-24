@@ -1,6 +1,13 @@
 import React from 'react';
 import { X, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 
+// "YYYY-MM-DD" -> "DD/MM/AAAA" (só reformata a string, sem Date — evita deslocamento de fuso).
+function formatDateBR(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+
 /**
  * Resumo pós-criação de uma reserva recorrente — mostra quantas ocorrências
  * foram criadas com sucesso e, se houver, quais datas falharam e por quê
@@ -14,11 +21,11 @@ export default function ModalSeriesResult({ succeeded = [], failed = [], classNa
 
   return (
     <div className="modal-overlay animate-fade-in">
-      <div className="card-reflow" style={{ width: '100%', maxWidth: '460px', padding: '1.5rem', position: 'relative' }}>
+      <div className="card-reflow" style={{ width: '100%', maxWidth: '460px', padding: '1.25rem', position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.05rem', color: allFailed ? '#b91c1c' : '#0f2942' }}>
             {allFailed ? <XCircle size={20} color="#b91c1c" /> : <CheckCircle size={20} color="#15803d" />}
-            {allFailed ? 'Nenhuma aula pôde ser agendada' : `${succeeded.length} de ${total} aula(s) agendadas`}
+            {allFailed ? 'Nenhuma aula pôde ser agendada' : `${succeeded.length} de ${total} aulas agendadas`}
           </div>
           <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8' }}>
             <X size={20} />
@@ -39,12 +46,12 @@ export default function ModalSeriesResult({ succeeded = [], failed = [], classNa
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 700, color: '#991b1b', marginBottom: '0.5rem' }}>
               <AlertTriangle size={15} />
-              Não foi possível agendar:
+              Não agendadas:
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               {failed.map((f, i) => (
                 <div key={`${f.date}-${i}`} style={{ fontSize: '0.78rem', color: '#7f1d1d', lineHeight: 1.4 }}>
-                  <strong>{f.date}</strong> — {f.reason}
+                  <strong>{formatDateBR(f.date)}</strong> — {f.reason}
                 </div>
               ))}
             </div>
@@ -61,10 +68,10 @@ export default function ModalSeriesResult({ succeeded = [], failed = [], classNa
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 700, color: '#166534', marginBottom: '0.5rem' }}>
               <CheckCircle size={15} />
-              Agendadas com sucesso:
+              Agendadas:
             </div>
             <div style={{ fontSize: '0.78rem', color: '#166534', lineHeight: 1.5 }}>
-              {succeeded.map(a => a.date).join(' · ')}
+              {succeeded.map(a => formatDateBR(a.date)).join(' · ')}
             </div>
           </div>
         )}

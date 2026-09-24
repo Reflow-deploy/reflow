@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Save, Building, Users, Check, AlertCircle } from 'lucide-react';
+import { useIsMobile } from '../../utils/useIsMobile';
 
 const AVAILABLE_EQUIPMENTS = [
   'Projetor',
@@ -33,7 +34,7 @@ const DESK_TYPES = [
 ];
 
 export default function ModalEditSpace({ space, onClose, onSave }) {
-  if (!space) return null;
+  const isMobile = useIsMobile();
 
   const [name, setName] = useState(space.name || '');
   const [type, setType] = useState(space.type || 'Sala de Aula');
@@ -44,6 +45,10 @@ export default function ModalEditSpace({ space, onClose, onSave }) {
   const [equipments, setEquipments] = useState(space.equipments || ['Projetor', 'Ar-condicionado', 'Lousa Digital']);
   const [saved, setSaved] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  if (!space) return null;
+
+  const twoCols = isMobile ? '1fr' : 'minmax(0, 1fr) minmax(0, 1fr)';
 
   const handleToggleEquipment = (item) => {
     if (equipments.includes(item)) {
@@ -92,8 +97,8 @@ export default function ModalEditSpace({ space, onClose, onSave }) {
         boxShadow: '0 24px 60px rgba(0,0,0,0.18)',
         width: '100%',
         maxWidth: '520px',
-        padding: '2rem',
-        maxHeight: '90vh',
+        padding: isMobile ? '1.25rem' : '2rem',
+        maxHeight: '90dvh',
         overflowY: 'auto',
         position: 'relative'
       }}>
@@ -101,10 +106,10 @@ export default function ModalEditSpace({ space, onClose, onSave }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
           <div>
             <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0f2942' }}>
-              Editar Informações da Sala
+              Editar sala
             </h2>
             <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#64748b' }}>
-              Código do Espaço: <code style={{ backgroundColor: '#f1f5f9', padding: '0.1rem 0.4rem', borderRadius: '0.25rem', color: '#0b2238' }}>{space.id}</code>
+              Código: <code style={{ backgroundColor: '#f1f5f9', padding: '0.1rem 0.4rem', borderRadius: '0.25rem', color: '#0b2238' }}>{space.id}</code>
             </p>
           </div>
           <button
@@ -130,7 +135,7 @@ export default function ModalEditSpace({ space, onClose, onSave }) {
           {/* Nome da Sala */}
           <div>
             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.4rem' }}>
-              Nome de Exibição da Sala:
+              Nome
             </label>
             <input
               type="text"
@@ -146,10 +151,10 @@ export default function ModalEditSpace({ space, onClose, onSave }) {
           </div>
 
           {/* Tipo e Capacidade (Grid 2 cols) */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: twoCols, gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.4rem' }}>
-                Tipo de Espaço:
+                Tipo
               </label>
               <select
                 value={type}
@@ -167,7 +172,7 @@ export default function ModalEditSpace({ space, onClose, onSave }) {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.4rem' }}>
-                Capacidade (Alunos):
+                Capacidade
               </label>
               <input
                 type="number"
@@ -185,10 +190,10 @@ export default function ModalEditSpace({ space, onClose, onSave }) {
           </div>
 
           {/* Bloco e Status (Grid 2 cols) */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: twoCols, gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.4rem' }}>
-                Bloco do Edifício:
+                Bloco
               </label>
               <select
                 value={block}
@@ -206,7 +211,7 @@ export default function ModalEditSpace({ space, onClose, onSave }) {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.4rem' }}>
-                Status Operacional:
+                Status
               </label>
               <select
                 value={status}
@@ -226,7 +231,7 @@ export default function ModalEditSpace({ space, onClose, onSave }) {
           {/* Tipo de Mesas dos Alunos */}
           <div>
             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.4rem' }}>
-              Disposição das Mesas para Alunos:
+              Mesas
             </label>
             <select
               value={deskType}
@@ -245,13 +250,13 @@ export default function ModalEditSpace({ space, onClose, onSave }) {
           {/* Checklist de Equipamentos / Objetos */}
           <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#0f2942', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-              Objetos & Equipamentos Presentes:
+              Equipamentos
             </label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: isMobile ? '0.25rem 0.5rem' : '0.5rem' }}>
               {AVAILABLE_EQUIPMENTS.map(item => {
                 const isChecked = equipments.includes(item);
                 return (
-                  <label key={item} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.825rem', color: '#334155', cursor: 'pointer' }}>
+                  <label key={item} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.825rem', color: '#334155', cursor: 'pointer', padding: isMobile ? '0.4rem 0' : 0 }}>
                     <input
                       type="checkbox"
                       checked={isChecked}
@@ -266,7 +271,10 @@ export default function ModalEditSpace({ space, onClose, onSave }) {
           </div>
 
           {/* Actions */}
-          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+          <div style={{
+            display: 'flex', gap: '0.75rem', marginTop: '0.5rem',
+            ...(isMobile ? { position: 'sticky', bottom: '-1.25rem', backgroundColor: '#ffffff', padding: '0.75rem 0 0.25rem', borderTop: '1px solid #f1f5f9' } : {})
+          }}>
             <button
               type="button"
               onClick={onClose}
@@ -290,7 +298,7 @@ export default function ModalEditSpace({ space, onClose, onSave }) {
                 transition: 'background 0.25s'
               }}
             >
-              {saved ? <><Check size={16} /> Salvo no Banco!</> : <><Save size={16} /> Salvar Alterações</>}
+              {saved ? <><Check size={16} /> Salvo!</> : <><Save size={16} /> Salvar</>}
             </button>
           </div>
         </form>
