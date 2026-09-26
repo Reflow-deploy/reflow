@@ -240,16 +240,27 @@ export default function App() {
     setAdminAuditLogLoading(false);
   }, []);
 
-  // 🔄 Carrega os dados iniciais do Supabase se configurado
-  useEffect(() => {
-    loadInitialData().then(data => {
-      if (data.spaces) setSpaces(data.spaces);
-      if (data.collaborators) setCollaborators(data.collaborators);
-      if (data.classes) setClasses(data.classes);
-      if (data.occurrences) setOccurrences(data.occurrences);
-      if (data.auditLogs) setAuditLogs(data.auditLogs);
-      if (data.allocations) setAllocations(data.allocations);
-    });
+  // Carga inicial dos dados. ANTES rodava uma vez na montagem, ANTES do login
+  // estar pronto: o banco (RLS) devolvia tudo vazio, e o código caía nos dados
+  // de exemplo do defaultData.js — nomes de turmas/salas que não existem no
+  // banco ("Sala de Aula 01", "1º TDS…") ficavam na tela até a primeira
+  // ressincronização corrigir. Agora a carga só roda com usuário aprovado e
+  // NUNCA usa dados de exemplo quando há Supabase: enquanto carrega mostra uma
+  // tela de "Carregando…", e se falhar, uma tela com "Tentar de novo".
+  const [dataReady, setDataReady] = useState(false);
+  const [dataLoadFailed, setDataLoadFailed] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+
+  // Aplica um pacote completo de dados vindo do banco ao estado da tela.
+  const applyData = useCallback((data) => {
+    setSpaces(data.spaces);
+    setAllocations(data.allocations);
+    setOccurrences(data.occurrences);
+    setAuditLogs(data.auditLogs);
+    setCollaborators(data.collaborators);
+    setClasses(data.classes);
+    setSelectedSpace(prev => prev ? (data.spaces.find(sp => sp.id === prev.id) || null) : prev);
+    setDataReady(true);
   }, []);
 
   // 📡 Sincronização em tempo real (Supabase Realtime) — sem isso, uma
@@ -284,23 +295,56 @@ export default function App() {
       // Chegou evento em tempo real enquanto buscava: o resultado pode já estar
       // velho. Descarta e tenta de novo em seguida.
       if (realtimeEventsRef.current !== eventsBefore) { raced = true; return; }
-      setSpaces(data.spaces);
-      setAllocations(data.allocations);
-      setOccurrences(data.occurrences);
-      setAuditLogs(data.auditLogs);
-      setCollaborators(data.collaborators);
-      setClasses(data.classes);
-      setSelectedSpace(prev => prev ? (data.spaces.find(sp => sp.id === prev.id) || null) : prev);
+      applyData(data);
     } finally {
       resyncingRef.current = false;
       if (raced) { lastResyncRef.current = 0; setTimeout(resyncData, 700); }
     }
-  }, []);
+  }, [applyData]);
 
   // Depende só do id do usuário (não do objeto `session`): o Supabase emite
   // "login" toda vez que a aba volta ao foco, e com `session` na dependência
   // o canal era derrubado e recriado a cada retorno.
   const realtimeUserId = session?.user?.id;
+
+  // Só carrega com usuário logado E aprovado (para "Pendente" o RLS devolve
+  // tudo vazio, e essa tela nem usa os dados).
+  const canLoadData = Boolean(realtimeUserId) && Boolean(currentUser?.role) && currentUser.role !== ROLES.PENDENTE;
+
+  useEffect(() => {
+    // Sem Supabase configurado (desenvolvimento local): dados de exemplo.
+    if (!supabase) {
+      loadInitialData().then(data => {
+        setSpaces(data.spaces);
+        setCollaborators(data.collaborators);
+        setClasses(data.classes);
+        setOccurrences(data.occurrences);
+        setAuditLogs(data.auditLogs);
+        setAllocations(data.allocations);
+        setDataReady(true);
+      });
+      return;
+    }
+
+    if (!canLoadData) {
+      setDataReady(false); // logout / outra conta: não deixa dados do usuário anterior na tela
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      setDataLoadFailed(false);
+      // Até 5 tentativas com espera crescente (a sessão/rede podem levar um instante).
+      for (let attempt = 0; attempt < 5 && !cancelled; attempt++) {
+        const data = await reloadAllData();
+        if (cancelled) return;
+        if (data) { applyData(data); return; }
+        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+      }
+      if (!cancelled) setDataLoadFailed(true);
+    })();
+    return () => { cancelled = true; };
+  }, [canLoadData, loadAttempt, applyData]);
 
   useEffect(() => {
     if (!realtimeUserId) return;
@@ -1176,6 +1220,28 @@ Status Atual: ABERTO`
 
   if (!currentUser || currentUser.role === ROLES.PENDENTE) {
     return <PendingApproval userEmail={currentUser?.email || session.user?.email} onLogout={handleLogout} />;
+  }
+
+  if (supabase && !dataReady) {
+    return (
+      <div style={{ width: '100vw', height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', backgroundColor: '#f8fafc', padding: '1.5rem', textAlign: 'center' }}>
+        {dataLoadFailed ? (
+          <>
+            <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f2942' }}>Não foi possível carregar os dados.</p>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>Verifique a conexão e tente de novo.</p>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button className="btn-primary" onClick={() => setLoadAttempt(a => a + 1)}>Tentar de novo</button>
+              <button className="btn-secondary" onClick={handleLogout}>Sair</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ width: '40px', height: '40px', border: '3px solid #e2e8f0', borderTopColor: '#0f2942', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <p style={{ margin: 0, fontSize: '0.9rem', color: '#64748b' }}>Carregando…</p>
+          </>
+        )}
+      </div>
+    );
   }
 
   // Volta o seletor de data/hora do mapa pro momento real atual — desfaz o

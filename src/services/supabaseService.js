@@ -167,7 +167,6 @@ export async function loadInitialData() {
     } else {
       // Fallback para salas padrão e sementeia no Supabase em segundo plano
       spacesList = DEFAULT_SPACES;
-      seedSpacesIfEmpty();
     }
 
     // 2. Ocorrências
@@ -194,7 +193,6 @@ export async function loadInitialData() {
       collaboratorsList = dbCollaborators.map(mapCollaboratorRow);
     } else {
       collaboratorsList = DEFAULT_COLLABORATORS;
-      seedCollaboratorsIfEmpty();
     }
 
     // 5. Turmas
@@ -205,7 +203,6 @@ export async function loadInitialData() {
       classesList = dbClasses.map(mapClassRow);
     } else {
       classesList = DEFAULT_CLASSES;
-      seedClassesIfEmpty();
     }
 
     return {
