@@ -10,6 +10,22 @@
  */
 import { supabase } from '../lib/supabaseClient';
 
+// O supabase-js só devolve "Edge Function returned a non-2xx status code" quando
+// a função responde com erro. O motivo de verdade vem no corpo da resposta
+// ({ error: "..." }), então lemos ele para mostrar no histórico de e-mails.
+async function extractFunctionError(error) {
+  try {
+    const res = error?.context;
+    if (res && typeof res.json === 'function') {
+      const body = await res.json();
+      if (body?.error) return body.error;
+    }
+  } catch {
+    // corpo ilegível — cai na mensagem padrão abaixo
+  }
+  return error?.message || 'erro desconhecido';
+}
+
 export async function sendOccurrenceEmail({ to, subject, bodyHtml, bodyText }) {
   if (!supabase) {
     throw new Error('Supabase não está configurado — não é possível enviar e-mail.');
@@ -20,7 +36,7 @@ export async function sendOccurrenceEmail({ to, subject, bodyHtml, bodyText }) {
   });
 
   if (error) {
-    throw error;
+    throw new Error(await extractFunctionError(error));
   }
   if (data?.error) {
     throw new Error(data.error);

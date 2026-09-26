@@ -169,6 +169,18 @@ Deno.serve(async (req: Request) => {
 
     if (!tokenRes.ok || !tokenData.access_token) {
       console.error("Falha ao renovar token do Google:", tokenData);
+      // Mensagens específicas para as causas mais comuns — aparecem no
+      // histórico de e-mails e evitam ter que ir procurar nos logs.
+      if (tokenData?.error === "invalid_grant") {
+        return jsonResponse({
+          error: "Autorização do Google expirada ou revogada. É preciso gerar um novo GOOGLE_REFRESH_TOKEN.",
+        }, 502);
+      }
+      if (tokenData?.error === "invalid_client" || tokenData?.error === "unauthorized_client") {
+        return jsonResponse({
+          error: "Credenciais do Google inválidas (GOOGLE_CLIENT_ID ou GOOGLE_CLIENT_SECRET).",
+        }, 502);
+      }
       return jsonResponse({ error: "Falha ao autenticar com o Google." }, 502);
     }
 
@@ -188,7 +200,8 @@ Deno.serve(async (req: Request) => {
 
     if (!sendRes.ok) {
       console.error("Falha ao enviar via Gmail API:", sendData);
-      return jsonResponse({ error: "Falha ao enviar e-mail via Gmail." }, 502);
+      const motivo = sendData?.error?.status ? ` (${sendData.error.status})` : "";
+      return jsonResponse({ error: `Falha ao enviar e-mail via Gmail${motivo}.` }, 502);
     }
 
     return jsonResponse({

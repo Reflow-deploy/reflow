@@ -1173,6 +1173,13 @@ Status Atual: ABERTO`
   };
 
   const handleClearHistory = async () => {
+    // Salas que estavam em MANUTENCAO por causa de alguma ocorrência apagada
+    // agora ficam sem nenhuma ocorrência — sem isso, ficariam presas em
+    // manutenção (e sem poder ser reservadas). Salas postas em manutenção
+    // à mão, sem ocorrência, não são tocadas.
+    const spacesWithOccurrences = new Set(occurrences.map(o => o.spaceId));
+    const spacesToRelease = spaces.filter(sp => sp.status === 'MANUTENCAO' && spacesWithOccurrences.has(sp.id));
+
     try {
       await dbClearHistory();
     } catch (err) {
@@ -1182,7 +1189,8 @@ Status Atual: ABERTO`
     }
     setOccurrences([]);
     setAuditLogs([]);
-    showToast('Histórico limpo');
+    spacesToRelease.forEach(sp => setSpaceStatus(sp.id, 'LIVRE'));
+    showToast(spacesToRelease.length > 0 ? 'Histórico limpo e salas liberadas' : 'Histórico limpo');
   };
 
   const handleResendEmail = async (auditLog) => {
