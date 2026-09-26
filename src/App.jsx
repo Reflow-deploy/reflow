@@ -179,8 +179,22 @@ export default function App() {
 
   const [selectedSpace, setSelectedSpace] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDate, setSelectedDate] = useState(todayDateString());
-  const [selectedTime, setSelectedTime] = useState(nowTimeString());
+  // Data/hora usadas pelo mapa. ANTES eram dois useState inicializados UMA vez,
+  // na abertura da página: a hora nunca avançava, então uma reserva feita em
+  // outro aparelho pro horário atual não aparecia como ocupada aqui (a tela
+  // avaliava as salas na hora em que a página foi aberta) — parecia que a
+  // sincronização falhava. Agora, por padrão, segue o relógio ("ao vivo");
+  // só fica fixa quando o usuário escolhe uma data/hora manualmente, até
+  // voltar pra "Agora".
+  const [manualMoment, setManualMoment] = useState(null); // null = ao vivo | { date, time }
+  const selectedDate = manualMoment?.date ?? todayDateString();
+  const selectedTime = manualMoment?.time ?? nowTimeString();
+  const setSelectedDate = (date) => {
+    if (date) setManualMoment(prev => ({ date, time: prev?.time ?? nowTimeString() }));
+  };
+  const setSelectedTime = (time) => {
+    if (time) setManualMoment(prev => ({ date: prev?.date ?? todayDateString(), time }));
+  };
   const [toastMessage, setToastMessage] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -248,6 +262,7 @@ export default function App() {
   // eventos de qualquer forma para quem ainda não tem sessão.
   // Estado da conexão em tempo real e controle de ressincronização.
   const realtimeStatusRef = useRef('CLOSED');
+  const [syncStatus, setSyncStatus] = useState('reconnecting'); // live | reconnecting
   const realtimeEventsRef = useRef(0);   // eventos recebidos (detecta corrida com a recarga)
   const resyncingRef = useRef(false);
   const lastResyncRef = useRef(0);
@@ -418,6 +433,7 @@ export default function App() {
     const unsubscribe = subscribeToChanges(countedHandlers, (status) => {
       const previous = realtimeStatusRef.current;
       realtimeStatusRef.current = status;
+      setSyncStatus(status === 'SUBSCRIBED' ? 'live' : 'reconnecting');
       if (status !== 'SUBSCRIBED') console.warn('[Reflow] Realtime:', status);
       // (Re)conectou: pode ter perdido eventos enquanto estava fora.
       if (status === 'SUBSCRIBED' && previous !== 'SUBSCRIBED') resyncData();
@@ -437,8 +453,15 @@ export default function App() {
     document.addEventListener('visibilitychange', onVisible);
     window.addEventListener('pageshow', onVisible);
     window.addEventListener('online', resyncData);
+    // Sem Realtime conectado: recarrega a cada 15s. Com Realtime conectado:
+    // rede de proteção a cada 60s, pra pegar qualquer evento que o WebSocket
+    // tenha perdido em silêncio (celular, rede instável...).
+    let ticks = 0;
     const fallbackPoll = setInterval(() => {
-      if (document.visibilityState === 'visible' && realtimeStatusRef.current !== 'SUBSCRIBED') resyncData();
+      if (document.visibilityState !== 'visible') return;
+      ticks += 1;
+      const live = realtimeStatusRef.current === 'SUBSCRIBED';
+      if (!live || ticks % 4 === 0) resyncData();
     }, 15000);
     return () => {
       document.removeEventListener('visibilitychange', onVisible);
@@ -459,7 +482,7 @@ export default function App() {
 
   // ⏱️ Clock de tempo real — re-renderiza a cada 60 segundos
   useEffect(() => {
-    const interval = setInterval(() => setTick(t => t + 1), 60_000);
+    const interval = setInterval(() => setTick(t => t + 1), 20_000);
     return () => clearInterval(interval);
   }, []);
 
@@ -1158,8 +1181,7 @@ Status Atual: ABERTO`
   // Volta o seletor de data/hora do mapa pro momento real atual — desfaz o
   // "congelamento" de selectedTime (ver comentário no useState acima).
   const handleResetToNow = () => {
-    setSelectedDate(todayDateString());
-    setSelectedTime(nowTimeString());
+    setManualMoment(null);
   };
 
   // Calcula espaços com status na data/hora selecionada (padrão: agora)
@@ -1180,6 +1202,7 @@ Status Atual: ABERTO`
         occupiedCount={occupiedCount}
         occurrencesCount={occurrences.filter(o => (o.status || 'ABERTO') !== 'RESOLVIDO').length}
         onLogout={handleLogout}
+        syncStatus={syncStatus}
         currentUser={currentUser}
         onUpdateUser={handleUpdateUser}
         isOpen={isSidebarOpen}
@@ -1221,6 +1244,7 @@ Status Atual: ABERTO`
                 selectedTime={selectedTime}
                 setSelectedTime={setSelectedTime}
                 onResetToNow={handleResetToNow}
+                isManualMoment={manualMoment !== null}
               />
               <SpaceDrawer
                 space={selectedSpace ? spacesWithRealTimeStatus.find(s => s.id === selectedSpace.id) : null}

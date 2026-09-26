@@ -85,7 +85,7 @@ export function checkSpaceMatchesQuery(space, query) {
   return false;
 }
 
-export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace, searchQuery, setSearchQuery, selectedDate, setSelectedDate, selectedTime, setSelectedTime, onResetToNow }) {
+export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace, searchQuery, setSearchQuery, selectedDate, setSelectedDate, selectedTime, setSelectedTime, onResetToNow, isManualMoment = false }) {
   const isMobile = useIsMobile();
   const hasSearchActive = searchQuery && searchQuery.trim() !== '';
   
@@ -212,10 +212,18 @@ export default function InteractiveMap({ spaces, selectedSpace, setSelectedSpace
         </div>
       </div>
 
-      {selectedDate !== todayDateString() && (
-        <p style={{ fontSize: '0.78rem', color: '#0369a1', fontWeight: 600, margin: '-0.5rem 0 1rem 0' }}>
-          🕒 Mostrando status para {formatDateBR(selectedDate)} às {selectedTime}
-        </p>
+      {/* Só aparece quando o usuário fixou uma data/hora — no modo padrão o mapa
+          acompanha o relógio ("ao vivo"). */}
+      {isManualMoment && (
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.78rem', color: '#0369a1', fontWeight: 600, margin: '-0.25rem 0 0.9rem 0' }}>
+          <span>🕒 Mostrando {formatDateBR(selectedDate)} às {selectedTime}</span>
+          <button
+            onClick={onResetToNow}
+            style={{ border: '1px solid #93c5fd', backgroundColor: '#ffffff', color: '#0284c7', borderRadius: '0.375rem', padding: '0.2rem 0.6rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+          >
+            Voltar para agora
+          </button>
+        </div>
       )}
 
       {/* Quick Filter Chips (Atalhos Clicáveis de Pesquisa Rápida) */}

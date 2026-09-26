@@ -4,7 +4,7 @@ import ModalProfile from './modals/ModalProfile';
 import { getAllowedTabs } from '../utils/permissions';
 import { useIsMobile } from '../utils/useIsMobile';
 
-export default function Sidebar({ activeTab, setActiveTab, spacesCount, occupiedCount, occurrencesCount = 0, onLogout, currentUser, onUpdateUser, isOpen = false, onClose = () => {} }) {
+export default function Sidebar({ activeTab, setActiveTab, spacesCount, occupiedCount, occurrencesCount = 0, onLogout, syncStatus = 'reconnecting', currentUser, onUpdateUser, isOpen = false, onClose = () => {} }) {
   const isMobile = useIsMobile();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -133,8 +133,19 @@ export default function Sidebar({ activeTab, setActiveTab, spacesCount, occupied
           borderTop: '1px solid #e2e8f0',
           paddingTop: '1rem'
         }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
-            OCUPAÇÃO
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.05em' }}>
+              OCUPAÇÃO
+            </span>
+            {/* Estado da sincronização em tempo real — mostra se as mudanças de
+                outros usuários estão chegando sozinhas. */}
+            <span
+              title={syncStatus === 'live' ? 'Atualizando em tempo real' : 'Reconectando… os dados são recarregados a cada 15s'}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.68rem', fontWeight: 700, color: syncStatus === 'live' ? '#15803d' : '#b45309' }}
+            >
+              <span style={{ width: '7px', height: '7px', borderRadius: '9999px', backgroundColor: syncStatus === 'live' ? '#16a34a' : '#f59e0b' }} />
+              {syncStatus === 'live' ? 'Ao vivo' : 'Reconectando'}
+            </span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#475569', marginBottom: '0.35rem' }}>
             <span>Livres</span>
