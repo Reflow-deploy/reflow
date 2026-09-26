@@ -962,10 +962,17 @@ Status Atual: ABERTO`
     // Efeito colateral "melhor esforço" de ações maiores (resolver/reabrir
     // ocorrência etc.) — não bloqueia a ação principal, mas agora avisa se
     // falhar em vez de engolir o erro em silêncio.
-    dbUpdateSpaceStatus(spaceId, status).catch(err => {
-      console.error('[Reflow] Erro ao atualizar status da sala:', err);
-      showToast('⚠️ Erro ao atualizar o status da sala.');
-    });
+    // Só Administrador, Direção e Suporte têm permissão de alterar uma sala no
+    // banco (RLS). Para os demais cargos, quem mantém MANUTENCAO/LIVRE em dia é
+    // o gatilho trg_sync_space_maintenance, que roda quando a ocorrência é
+    // criada, resolvida ou apagada — aqui só atualizamos a tela.
+    const canWriteSpaces = [ROLES.ADMIN, ROLES.DIRECAO, ROLES.SUPORTE].includes(currentUser?.role);
+    if (canWriteSpaces) {
+      dbUpdateSpaceStatus(spaceId, status).catch(err => {
+        console.error('[Reflow] Erro ao atualizar status da sala:', err);
+        showToast('⚠️ Erro ao atualizar o status da sala.');
+      });
+    }
     setSpaces(prev => prev.map(sp => sp.id === spaceId ? { ...sp, status } : sp));
     setSelectedSpace(prev => (prev && prev.id === spaceId) ? { ...prev, status } : prev);
   };
