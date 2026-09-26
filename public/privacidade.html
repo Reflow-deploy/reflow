@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Política de Privacidade — Reflow</title>
+  <link rel="icon" type="image/png" href="/Favicon.png" />
+  <style>
+    :root { --primary: #0f2942; --text: #1e293b; --muted: #64748b; --border: #e2e8f0; --bg: #f8fafc; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: Inter, "Segoe UI", Arial, sans-serif; line-height: 1.65; }
+    header { background: var(--primary); color: #fff; padding: 22px 16px; }
+    header .wrap { display: flex; align-items: center; gap: 14px; }
+    header img { height: 40px; background: #fff; border-radius: 8px; padding: 4px 8px; }
+    header h1 { margin: 0; font-size: 20px; font-weight: 700; }
+    main { max-width: 820px; margin: 0 auto; padding: 28px 16px 56px; }
+    .wrap { max-width: 820px; margin: 0 auto; }
+    h2 { color: var(--primary); font-size: 18px; margin: 32px 0 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    p, li { font-size: 15.5px; }
+    ul { padding-left: 22px; }
+    a { color: #0369a1; }
+    .meta { color: var(--muted); font-size: 14px; }
+    footer { text-align: center; color: var(--muted); font-size: 13px; padding: 24px 16px; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <img src="/logo.webp" alt="Reflow" />
+      <h1>Política de Privacidade</h1>
+    </div>
+  </header>
+
+  <main>
+    <p class="meta">Última atualização: 26 de setembro de 2026</p>
+
+    <p>
+      O <strong>Reflow</strong> é um sistema web de gestão de espaços escolares (mapa de salas, reservas e ocorrências de
+      infraestrutura), desenvolvido por alunos do curso de informática como projeto escolar. Esta página explica quais dados
+      o Reflow usa, para que e como eles são protegidos.
+    </p>
+
+    <h2>1. Quais dados são usados</h2>
+    <ul>
+      <li><strong>Login com o Google:</strong> nome, endereço de e-mail e foto de perfil da conta Google de quem entra no sistema.</li>
+      <li><strong>Dados registrados pelos usuários:</strong> reservas de espaços (professor, turma, data e horário), ocorrências
+        de infraestrutura (espaço, tipo de falha, prioridade, descrição e quem registrou) e cadastros de colaboradores
+        (nome, categoria, função, e-mail, telefone, jornada e dias de trabalho) e de turmas.</li>
+      <li><strong>Cargo de acesso:</strong> o papel de cada pessoa no sistema (Pendente, Professor, Equipe de Suporte, Direção ou Administrador).</li>
+      <li><strong>Registros de auditoria:</strong> histórico dos e-mails de alerta enviados e das ações administrativas sensíveis
+        (troca de cargo, exclusão de ocorrência e edição de sala).</li>
+    </ul>
+
+    <h2>2. Para que os dados são usados</h2>
+    <ul>
+      <li>Identificar quem está usando o sistema e controlar o que cada cargo pode ver e fazer.</li>
+      <li>Registrar e mostrar reservas, ocorrências e cadastros, atualizados em tempo real para os usuários autorizados.</li>
+      <li>Enviar por e-mail o alerta de uma nova ocorrência ao responsável escolhido.</li>
+      <li>Manter um histórico de auditoria para a segurança e a organização da instituição.</li>
+    </ul>
+
+    <h2>3. Uso do e-mail (Gmail)</h2>
+    <p>
+      O envio dos alertas é feito no servidor, por meio de uma conta de e-mail dedicada ao sistema, usando a API do Gmail
+      exclusivamente para <strong>enviar</strong> mensagens de alerta. O Reflow <strong>não lê</strong>, não armazena e não
+      compartilha o conteúdo das caixas de e-mail de nenhum usuário. O uso das informações recebidas das APIs do Google segue a
+      <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Política de Dados de Usuário dos Serviços de API do Google</a>,
+      incluindo os requisitos de Uso Limitado.
+    </p>
+
+    <h2>4. Onde os dados ficam e com quem são compartilhados</h2>
+    <p>
+      Os dados ficam armazenados no <strong>Supabase</strong> (banco de dados PostgreSQL), e o site é hospedado na <strong>Vercel</strong>.
+      O login é realizado pelo <strong>Google</strong>. Esses provedores são usados apenas para o funcionamento do sistema.
+      Não vendemos dados e não os compartilhamos com terceiros para fins comerciais ou de publicidade. As informações de uma
+      ocorrência são enviadas apenas ao responsável escolhido para recebê-la.
+    </p>
+
+    <h2>5. Segurança</h2>
+    <ul>
+      <li>O acesso é feito somente pelo login do Google, e contas novas ficam sem acesso até a aprovação de um Administrador.</li>
+      <li>O banco de dados aplica regras de segurança por cargo (Row Level Security), recusando leituras e alterações não autorizadas.</li>
+      <li>A comunicação usa HTTPS, e as ações administrativas sensíveis são registradas em auditoria.</li>
+    </ul>
+
+    <h2>6. Por quanto tempo os dados são mantidos e como excluí-los</h2>
+    <p>
+      Os dados são mantidos enquanto forem necessários para o funcionamento do sistema. Um Administrador ou a Direção pode
+      excluir o cadastro de um colaborador, o que também remove a conta de login dele. Você pode solicitar a
+      correção ou a exclusão dos seus dados pelo contato abaixo.
+    </p>
+
+    <h2>7. Seus direitos</h2>
+    <p>
+      Nos termos da Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018), você pode solicitar informações sobre os seus dados,
+      a correção de dados incorretos e a exclusão dos dados pessoais tratados pelo Reflow.
+    </p>
+
+    <h2>8. Contato</h2>
+    <p>
+      Dúvidas ou solicitações sobre esta política: <a href="mailto:fecip2025@gmail.com">fecip2025@gmail.com</a>.
+    </p>
+
+    <h2>9. Alterações</h2>
+    <p>
+      Esta política pode ser atualizada. A data da última revisão está no topo desta página.
+    </p>
+
+    <p><a href="/">← Voltar ao Reflow</a></p>
+  </main>
+
+  <footer>Reflow — Gestão Inteligente de Espaços Escolares · Projeto escolar FECIP 2026</footer>
+</body>
+</html>
