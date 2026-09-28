@@ -977,6 +977,20 @@ Status Atual: ABERTO`
     setSelectedSpace(prev => (prev && prev.id === spaceId) ? { ...prev, status } : prev);
   };
 
+  // Ao sair de MANUTENCAO (ocorrência resolvida/apagada/histórico limpo), a sala
+  // deve voltar para OCUPADO — não LIVRE — se ainda houver alguma alocação de
+  // hoje pra ela; mesmo critério "hasTodayLeft" já usado em
+  // handleCancelReservation/handleCancelSeries pro status cru da sala (o status
+  // exibido no mapa por data/hora continua calculado à parte por
+  // getRealTimeStatus). O gatilho trg_sync_space_maintenance espelha essa mesma
+  // regra no banco, então isto aqui é só o valor otimista da tela.
+  const spaceRawStatusAfterOccurrence = (spaceId) => {
+    const sp = spaces.find(s => s.id === spaceId);
+    const todayStr = todayDateString();
+    const hasTodayLeft = (sp?.scheduleToday || []).some(a => (a.date || todayStr) === todayStr);
+    return hasTodayLeft ? 'OCUPADO' : 'LIVRE';
+  };
+
   const handleReportOccurrence = (occurrenceData) => {
     const newOcc = {
       id: `occ-${Date.now()}`,
@@ -1029,7 +1043,7 @@ Status Atual: ABERTO`
           // Só libera a sala se não sobrar nenhuma outra ocorrência aberta pra ela
           const stillOpen = updated.some(o => o.spaceId === changedOcc.spaceId && o.status !== 'RESOLVIDO');
           if (!stillOpen) {
-            setSpaceStatus(changedOcc.spaceId, 'LIVRE');
+            setSpaceStatus(changedOcc.spaceId, spaceRawStatusAfterOccurrence(changedOcc.spaceId));
           }
         }
       }
@@ -1058,7 +1072,7 @@ Status Atual: ABERTO`
       if (target) {
         const stillOpen = updated.some(o => o.spaceId === target.spaceId && o.status !== 'RESOLVIDO');
         if (!stillOpen) {
-          setSpaceStatus(target.spaceId, 'LIVRE');
+          setSpaceStatus(target.spaceId, spaceRawStatusAfterOccurrence(target.spaceId));
         }
       }
 
@@ -1196,8 +1210,8 @@ Status Atual: ABERTO`
     }
     setOccurrences([]);
     setAuditLogs([]);
-    spacesToRelease.forEach(sp => setSpaceStatus(sp.id, 'LIVRE'));
-    showToast(spacesToRelease.length > 0 ? 'Histórico limpo e salas liberadas' : 'Histórico limpo');
+    spacesToRelease.forEach(sp => setSpaceStatus(sp.id, spaceRawStatusAfterOccurrence(sp.id)));
+    showToast(spacesToRelease.length > 0 ? 'Histórico limpo e salas atualizadas' : 'Histórico limpo');
   };
 
   const handleResendEmail = async (auditLog) => {
