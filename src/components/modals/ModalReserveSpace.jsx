@@ -133,6 +133,16 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
 
   if (!space) return null;
 
+  // Aviso (nunca bloqueia) quando a turma escolhida tem, no total de
+  // matriculados, mais alunos do que a sala comporta. É comparado contra o
+  // total da turma (classes.students_count), não contra o campo "Quantidade
+  // Estimada de Alunos" abaixo — que o professor pode reduzir livremente
+  // porque nem sempre a turma toda comparece, e isso não deve fazer o aviso
+  // sumir. A validação que BLOQUEIA o envio continua sendo só a de baixo
+  // (studentsCount digitado > capacidade), sem relação com este aviso.
+  const selectedClassObj = classes.find(c => c.name === selectedClass);
+  const classExceedsCapacity = Boolean(selectedClassObj) && Number(selectedClassObj.studentsCount) > space.capacity;
+
   // Auto update end time when start time changes if not modified manually
   const handleStartTimeChange = (newStartTime) => {
     setStartTime(newStartTime);
@@ -322,6 +332,16 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
             {realCurrentTime} hs
           </span>
         </div>
+
+        {classExceedsCapacity && (
+          <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '0.65rem 0.85rem', borderRadius: '0.375rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', lineHeight: '1.4' }}>
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+            <div>
+              Atenção: a turma <strong>{selectedClassObj.name}</strong> tem <strong>{selectedClassObj.studentsCount} alunos</strong> matriculados,
+              e esta sala comporta no máximo <strong>{space.capacity}</strong>. Ainda assim é possível confirmar a reserva — nem sempre a turma toda estará presente.
+            </div>
+          </div>
+        )}
 
         {errorMsg && (
           <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '0.65rem 0.85rem', borderRadius: '0.375rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', lineHeight: '1.4' }}>
