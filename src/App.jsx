@@ -780,7 +780,7 @@ Status Atual: ABERTO`
   // usava `selectedDate` (o dia visualizado no mapa), ignorando por completo
   // a data escolhida no formulário.
   const handleAllocateConfirm = async (allocationData) => {
-    const { spaceId, teacher, class: className, students, startTime, endTime, recurringDates, isRecurring } = allocationData;
+    const { spaceId, teacher, class: className, classId, students, startTime, endTime, recurringDates, isRecurring } = allocationData;
 
     const targetSpace = spaces.find(s => s.id === spaceId);
     if (targetSpace && targetSpace.status === 'MANUTENCAO') {
@@ -803,7 +803,10 @@ Status Atual: ABERTO`
       let classClash = null;
       for (const sp of spaces) {
         for (const alloc of (sp.scheduleToday || [])) {
-          if (alloc.class === className && (alloc.date || date) === date) {
+          // Compara pelo id da turma (FK classes.id); reservas antigas sem
+          // class_id caem de volta na comparação pelo nome.
+          const sameClass = classId && alloc.classId ? alloc.classId === classId : alloc.class === className;
+          if (sameClass && (alloc.date || date) === date) {
             const existStart = timeToMin(alloc.startTime);
             const existEnd = timeToMin(alloc.endTime);
             if (newStart < existEnd && newEnd > existStart) {
@@ -824,6 +827,7 @@ Status Atual: ABERTO`
         spaceId,
         teacher,
         class: className,
+        classId,
         students,
         startTime,
         endTime,

@@ -237,6 +237,7 @@ export default function ModalReserveSpace({ space, classes, currentUser, onClose
       spaceId: space.id,
       teacher: currentUser?.name || 'Prof. Filipe Guimarães',
       class: selectedClass,
+      classId: selectedClassObj?.id || null,
       students: Number(studentsCount),
       startTime,
       endTime,
