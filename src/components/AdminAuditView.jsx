@@ -1,3 +1,10 @@
+/**
+ * AdminAuditView.jsx — Tabela da Auditoria Administrativa (só o Administrador vê).
+ *
+ * Lista quem trocou cargos, apagou ocorrências ou editou/excluiu salas, com o valor antes e depois.
+ * Aparece na aba Auditoria de Configurações (SettingsModule.jsx).
+ */
+
 import React, { useState, useMemo } from 'react';
 import { ShieldCheck, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
 import { useIsMobile } from '../utils/useIsMobile';

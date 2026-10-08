@@ -1,3 +1,10 @@
+/**
+ * AnalyticsDashboard.jsx — Dashboard (Direção e Administrador).
+ *
+ * Mostra ocorrências abertas, tempo médio de resolução, taxa de ocupação, salas mais reportadas e
+ * ocupação por bloco e faixa de horário. Calcula tudo no navegador, com os dados já carregados.
+ */
+
 import React, { useMemo } from 'react';
 import { BarChart3, AlertTriangle, Clock, Percent, Building2, CalendarClock } from 'lucide-react';
 import { useIsMobile } from '../utils/useIsMobile';

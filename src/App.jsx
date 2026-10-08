@@ -1,3 +1,11 @@
+/**
+ * App.jsx — Componente raiz do Reflow (o "maestro" do sistema).
+ *
+ * Guarda o estado global (salas, reservas, ocorrências, colaboradores, turmas e usuário), carrega os
+ * dados do banco, escuta o tempo real e decide qual tela mostrar (login, aprovação pendente ou o sistema).
+ * Quem fala com o banco são os arquivos de src/services; quem desenha as telas são os de src/components.
+ */
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -555,7 +563,7 @@ export default function App() {
     return () => clearInterval(checkInterval);
   }, [currentUser?.id, currentUser?.role]);
 
-  // 🔓 Liberação Automática — verifica alocações expiradas a cada 60s
+  // 🔓 Liberação Automática — verifica alocações expiradas a cada 10s
   useEffect(() => {
     const releaseInterval = setInterval(() => {
       const currentMinutes = nowInMinutes();

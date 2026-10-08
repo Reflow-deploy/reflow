@@ -1,3 +1,7 @@
+-- 20260817000000_allocation_series.sql
+-- Adiciona allocations.series_id (agrupa as reservas de uma série semanal) e um índice parcial,
+-- o que permite cancelar a série inteira de uma vez.
+
 begin;
 
 alter table public.allocations add column series_id uuid;

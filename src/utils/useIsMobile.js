@@ -1,3 +1,9 @@
+/**
+ * useIsMobile.js — Hook que informa se a tela é de celular (menos de 768 px).
+ *
+ * Os componentes o usam para trocar o layout (menu em gaveta, botões menores etc.).
+ */
+
 import { useState, useEffect } from 'react';
 
 const MOBILE_QUERY = '(max-width: 767px)';

@@ -1,3 +1,9 @@
+/**
+ * ModalProfile.jsx — Janela "Meu perfil".
+ *
+ * Mostra o cargo da pessoa e permite trocar a foto. O cargo vem do banco e não pode ser alterado aqui.
+ */
+
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, Upload, ShieldCheck, UserCheck, Wrench, Lock, Check, Loader2 } from 'lucide-react';
 import { dbGetMyCollaboratorRecord } from '../../services/supabaseService';

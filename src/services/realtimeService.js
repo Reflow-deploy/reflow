@@ -1,3 +1,10 @@
+/**
+ * realtimeService.js — Sincronização em tempo real (Supabase Realtime).
+ *
+ * Assina as mudanças das tabelas por WebSocket, para que a reserva ou a ocorrência feita por uma pessoa
+ * apareça para todos sem recarregar a página. Usado pelo App.jsx.
+ */
+
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import {
   mapSpaceRow,

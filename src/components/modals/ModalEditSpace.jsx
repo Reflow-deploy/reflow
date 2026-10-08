@@ -1,3 +1,9 @@
+/**
+ * ModalEditSpace.jsx — Janela para editar uma sala.
+ *
+ * Permite alterar nome, tipo, capacidade, bloco, status, tipo de mesa e equipamentos.
+ */
+
 import React, { useState } from 'react';
 import { X, Save, Building, Users, Check, AlertCircle } from 'lucide-react';
 import { useIsMobile } from '../../utils/useIsMobile';

@@ -1,3 +1,7 @@
+-- 20260816000000_occurrence_resolved_at.sql
+-- Adiciona occurrences.resolved_at e o gatilho que o preenche ao resolver (e limpa ao reabrir).
+-- Alimenta o "tempo médio de resolução" do Dashboard.
+
 begin;
 
 alter table public.occurrences add column resolved_at timestamptz;

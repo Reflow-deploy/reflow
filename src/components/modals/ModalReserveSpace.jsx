@@ -1,3 +1,10 @@
+/**
+ * ModalReserveSpace.jsx — Janela de reserva de sala (avulsa ou semanal).
+ *
+ * Valida data, horários, capacidade, choque de horário na sala e recorrência (até 26 semanas)
+ * antes de entregar o pedido ao App.jsx.
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Calendar, Clock, Users, AlertTriangle, Check, Repeat } from 'lucide-react';
 import { useIsMobile } from '../../utils/useIsMobile';

@@ -1,3 +1,10 @@
+/**
+ * SchoolMap.jsx — Desenho da planta baixa da escola, em SVG.
+ *
+ * Cada sala é um prédio isométrico feito de polígonos, colorido conforme o status (livre, ocupada ou
+ * manutenção). Clicar abre o painel da sala. As posições das salas ficam na lista roomCoordinates deste arquivo.
+ */
+
 import React from 'react';
 
 export default function SchoolMap({

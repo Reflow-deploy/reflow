@@ -1,3 +1,10 @@
+/**
+ * Sidebar.jsx — Menu lateral do sistema.
+ *
+ * Mostra só as abas que o cargo permite, o contador de salas livres/ocupadas, o indicador "Ao vivo" do tempo
+ * real e o menu do usuário (perfil e sair). No celular vira uma gaveta.
+ */
+
 import React, { useState } from 'react';
 import { Map, Calendar, AlertTriangle, BarChart3, Settings, LogOut, ChevronDown } from 'lucide-react';
 import ModalProfile from './modals/ModalProfile';

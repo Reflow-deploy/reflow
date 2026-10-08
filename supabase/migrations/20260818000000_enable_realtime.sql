@@ -1,3 +1,7 @@
+-- 20260818000000_enable_realtime.sql
+-- Liga o Supabase Realtime nas 6 tabelas do sistema (spaces, allocations, occurrences, audit_logs,
+-- collaborators e classes), para as telas se atualizarem ao vivo.
+
 begin;
 
 -- Habilita o Supabase Realtime (postgres_changes) nas tabelas que alimentam

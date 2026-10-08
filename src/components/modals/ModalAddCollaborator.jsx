@@ -1,3 +1,9 @@
+/**
+ * ModalAddCollaborator.jsx — Janela para cadastrar ou editar um colaborador.
+ *
+ * Pede nome, categoria, função, contato, jornada e dias de trabalho.
+ */
+
 import React, { useState } from 'react';
 import { X, UserPlus, Check, Edit3 } from 'lucide-react';
 import { useIsMobile } from '../../utils/useIsMobile';

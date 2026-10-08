@@ -1,3 +1,7 @@
+-- 20260815000000_admin_audit_log.sql
+-- Cria a tabela admin_audit_log (auditoria administrativa, imutável) e os gatilhos que a preenchem:
+-- troca de cargo, exclusão de ocorrência e edição/exclusão de sala. Só o Administrador a lê.
+
 begin;
 
 -- 1. TABELA

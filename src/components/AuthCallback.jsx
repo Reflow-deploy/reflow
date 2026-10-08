@@ -1,3 +1,10 @@
+/**
+ * AuthCallback.jsx — Tela de transição do login com o Google.
+ *
+ * Aparece quando o Google devolve o usuário ao site (rota /auth/callback): espera o Supabase
+ * concluir o login e entrega a sessão ao App.jsx.
+ */
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { AlertCircle, CheckCircle } from 'lucide-react';

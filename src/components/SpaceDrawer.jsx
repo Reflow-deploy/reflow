@@ -1,3 +1,10 @@
+/**
+ * SpaceDrawer.jsx — Painel lateral de uma sala.
+ *
+ * Mostra status, capacidade, equipamentos, mobiliário e a agenda, e traz os botões de reservar, cancelar
+ * reserva e reportar problema, além da edição rápida de equipamentos e tipo de mesa.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, Clock, Users, Calendar, Trash2, Siren, Cpu, Edit3, Save, Wrench, AlertTriangle } from 'lucide-react';
 import { useIsMobile } from '../utils/useIsMobile';

@@ -1,3 +1,9 @@
+/**
+ * ModalSeriesResult.jsx — Janela com o resultado de uma reserva semanal.
+ *
+ * Mostra as datas criadas e as que falharam, com o motivo.
+ */
+
 import React from 'react';
 import { X, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 

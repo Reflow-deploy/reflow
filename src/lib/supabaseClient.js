@@ -1,3 +1,10 @@
+/**
+ * supabaseClient.js — Cria a conexão com o Supabase (banco, login e tempo real).
+ *
+ * Usa a URL e a chave pública (anon) do arquivo .env. Todo código que fala com o banco importa
+ * o objeto `supabase` exportado daqui.
+ */
+
 import { createClient } from '@supabase/supabase-js';
 
 const rawUrl = import.meta.env.VITE_SUPABASE_URL || '';

@@ -1,3 +1,10 @@
+/**
+ * OccurrencesCenter.jsx — Central de Ocorrências.
+ *
+ * Lista os chamados de infraestrutura, permite resolver, reabrir e apagar, e mostra o histórico dos
+ * e-mails de alerta enviados (com opção de reenviar). A Equipe de Suporte só acessa esta tela.
+ */
+
 import React, { useState } from 'react';
 import { AlertTriangle, Mail, Trash2, CheckCircle2, Clock, ShieldAlert, Send, RefreshCw, RotateCcw, X, ChevronLeft } from 'lucide-react';
 import { ROLES } from '../utils/permissions';

@@ -1,3 +1,9 @@
+/**
+ * Header.jsx — Barra superior do sistema.
+ *
+ * Traz o campo de busca de salas (sala, professor ou equipamento) e, no celular, o botão que abre o menu lateral.
+ */
+
 import React from 'react';
 import { Search, Menu } from 'lucide-react';
 import { useIsMobile } from '../utils/useIsMobile';

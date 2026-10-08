@@ -1,3 +1,7 @@
+/**
+ * ModalAddClass.jsx — Janela para cadastrar ou editar uma turma (nome e quantidade de alunos).
+ */
+
 import React, { useState, useEffect } from 'react';
 import { X, BookOpen, Check, Save } from 'lucide-react';
 import { useIsMobile } from '../../utils/useIsMobile';

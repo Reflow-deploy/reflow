@@ -1,3 +1,10 @@
+/**
+ * ModalReportOccurrence.jsx — Janela para reportar uma ocorrência.
+ *
+ * Pede espaço, tipo de falha, prioridade, responsável e descrição. Ao enviar, o App.jsx coloca a sala em
+ * manutenção e dispara o e-mail de alerta.
+ */
+
 import React, { useState } from 'react';
 import { X, Siren, Mail, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { ROLES } from '../../utils/permissions';

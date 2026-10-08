@@ -1,3 +1,9 @@
+/**
+ * FABAlert.jsx — Botão vermelho flutuante "Reportar ocorrência".
+ *
+ * Ao clicar, abre o formulário de ocorrência (ModalReportOccurrence). Não aparece para a Equipe de Suporte.
+ */
+
 import React from 'react';
 import { AlertTriangle, Siren } from 'lucide-react';
 import { useIsMobile } from '../utils/useIsMobile';

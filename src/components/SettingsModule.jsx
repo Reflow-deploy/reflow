@@ -1,3 +1,10 @@
+/**
+ * SettingsModule.jsx — Tela de Configurações, com 5 abas.
+ *
+ * Reservas (minhas reservas), Turmas, Equipe (colaboradores e cargos), Salas e Auditoria (só Administrador).
+ * A edição dos cadastros é liberada na interface só para Direção e Administrador.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Users, BookOpen, Calendar, Plus, Search, Edit3, Trash2, Clock, Mail, Phone, Check, MapPin, BookMarked, AlertCircle, Cpu, LayoutGrid, ShieldCheck, Hourglass, Link2 } from 'lucide-react';
 import { getRealTimeStatus, nowInMinutes, timeToMinutes, todayDateString } from '../utils/spaceStatus';

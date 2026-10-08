@@ -1,3 +1,11 @@
+/**
+ * supabaseService.js — Todas as operações no banco de dados.
+ *
+ * Carrega os dados e cria, altera e apaga reservas, ocorrências, turmas, colaboradores e salas.
+ * Também traduz as linhas do banco (snake_case) para o formato usado pelas telas (camelCase).
+ * É chamado pelo App.jsx.
+ */
+
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { DEFAULT_SPACES, DEFAULT_COLLABORATORS, DEFAULT_CLASSES } from './defaultData';
 import { todayDateString } from '../utils/spaceStatus';

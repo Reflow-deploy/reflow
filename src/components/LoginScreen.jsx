@@ -1,3 +1,9 @@
+/**
+ * LoginScreen.jsx — Tela de login.
+ *
+ * Tem um único botão, "Entrar com Google" (OAuth pelo Supabase Auth). Não existem campos de usuário e senha.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { AlertCircle } from 'lucide-react';

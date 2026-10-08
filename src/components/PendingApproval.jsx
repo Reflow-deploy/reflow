@@ -1,3 +1,9 @@
+/**
+ * PendingApproval.jsx — Tela "Aguardando aprovação".
+ *
+ * Mostrada a contas novas (cargo Pendente) até que um Administrador defina o cargo real.
+ */
+
 import React, { useState } from 'react';
 import { Hourglass, LogOut, RefreshCw, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';

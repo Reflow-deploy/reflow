@@ -1,3 +1,10 @@
+/**
+ * InteractiveMap.jsx — Tela do Mapa Interativo.
+ *
+ * Reúne os filtros rápidos, a busca de salas e o seletor de data e hora em volta do desenho da planta
+ * baixa (SchoolMap.jsx). Também decide quais salas correspondem à busca (checkSpaceMatchesQuery).
+ */
+
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Calendar, Search, X, Sparkles, Filter, Clock, RotateCcw } from 'lucide-react';
 import SchoolMap from './SchoolMap';
