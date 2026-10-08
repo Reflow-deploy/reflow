@@ -49,6 +49,7 @@ export default function SpaceDrawer({
   const [isEditing, setIsEditing] = useState(false);
   const [equipments, setEquipments] = useState(space?.equipments || ['Projetor', 'Ar-condicionado', 'Lousa Digital']);
   const [deskType, setDeskType] = useState(space?.deskType || 'Individual');
+  const [confirmandoId, setConfirmandoId] = useState(null); // reserva da lista aguardando confirmação de cancelamento
 
   useEffect(() => {
     if (space) {
@@ -492,6 +493,39 @@ export default function SpaceDrawer({
                     </div>
                     <div style={{ color: '#1e293b', fontWeight: 600, marginTop: '0.2rem' }}>{alloc.class}</div>
                     <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{alloc.teacher} · 👥 {alloc.students} alunos</div>
+
+                    <div style={{ marginTop: '0.5rem' }}>
+                      {confirmandoId === alloc.id ? (
+                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.78rem' }}>
+                          <span style={{ fontWeight: 600, color: '#991b1b' }}>
+                            Cancelar esta reserva?{alloc.seriesId ? ' (só este dia)' : ''}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => { setConfirmandoId(null); onCancelReservation(space.id, alloc.id); }}
+                            style={{ backgroundColor: '#b91c1c', color: '#ffffff', border: 'none', borderRadius: '0.35rem', padding: '0.3rem 0.65rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                          >
+                            Sim, cancelar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmandoId(null)}
+                            style={{ backgroundColor: '#ffffff', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '0.35rem', padding: '0.3rem 0.65rem', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                          >
+                            Não
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmandoId(alloc.id)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', backgroundColor: '#ffffff', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: '0.35rem', padding: '0.3rem 0.65rem', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                        >
+                          <Trash2 size={13} />
+                          Cancelar
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
