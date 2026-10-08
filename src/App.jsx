@@ -1351,6 +1351,7 @@ Status Atual: ABERTO`
                   setShowReportModal(true);
                 }}
                 currentDate={`${formatDateBR(selectedDate)} às ${selectedTime}`}
+                selectedDate={selectedDate}
                 isAdmin={['Administrador', 'Direção'].includes(currentUser?.role)}
                 onUpdateSpaceFeatures={handleUpdateSpaceFeatures}
               />

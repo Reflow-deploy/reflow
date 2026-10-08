@@ -8,6 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, Clock, Users, Calendar, Trash2, Siren, Cpu, Edit3, Save, Wrench, AlertTriangle } from 'lucide-react';
 import { useIsMobile } from '../utils/useIsMobile';
+import { todayDateString, timeToMinutes } from '../utils/spaceStatus';
 
 const AVAILABLE_EQUIPMENTS = [
   'Projetor',
@@ -32,6 +33,7 @@ export default function SpaceDrawer({
   onCancelReservation, 
   onRequestOccurrence = () => {},
   currentDate,
+  selectedDate,
   isAdmin = false,
   onUpdateSpaceFeatures = () => {}
 }) {
@@ -57,6 +59,14 @@ export default function SpaceDrawer({
   }, [space]);
 
   if (!space) return null;
+
+  // Reservas desta sala no dia que está sendo visto no mapa (hoje ou a data escolhida).
+  // space.scheduleToday guarda as reservas de QUALQUER data, então filtramos pela data.
+  const dayDate = selectedDate || todayDateString();
+  const dayAllocations = (space.scheduleToday || [])
+    .filter(a => (a.date || todayDateString()) === dayDate)
+    .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+  const [dayYear, dayMonth, dayDay] = dayDate.split('-');
 
   const isMaintenance = space.status === 'MANUTENCAO';
   const isOccupied = space.status === 'OCUPADO';
@@ -445,6 +455,49 @@ export default function SpaceDrawer({
           </div>
         )}
 
+        {/* Reservas do dia: todas as reservas desta sala na data visualizada */}
+        <div style={{
+          backgroundColor: '#f8fafc',
+          border: '1px solid #e2e8f0',
+          borderRadius: '0.5rem',
+          padding: '1rem',
+          marginBottom: '1.25rem'
+        }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.75rem', textTransform: 'uppercase' }}>
+            RESERVAS DO DIA — {dayDay}/{dayMonth}/{dayYear}
+          </div>
+
+          {dayAllocations.length === 0 ? (
+            <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Nenhuma reserva para este dia.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {dayAllocations.map(alloc => {
+                const isCurrent = isOccupied && space.currentAllocation?.id === alloc.id;
+                return (
+                  <div key={alloc.id} style={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderLeft: `4px solid ${isCurrent ? '#dc2626' : '#0369a1'}`,
+                    borderRadius: '0.4rem',
+                    padding: '0.6rem 0.75rem',
+                    fontSize: '0.85rem'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ fontWeight: 700, color: '#1e293b' }}>🕒 {alloc.startTime} - {alloc.endTime}</span>
+                      {isCurrent && (
+                        <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#991b1b', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '9999px', padding: '0.1rem 0.5rem', letterSpacing: '0.04em' }}>
+                          EM ANDAMENTO
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ color: '#1e293b', fontWeight: 600, marginTop: '0.2rem' }}>{alloc.class}</div>
+                    <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{alloc.teacher} · 👥 {alloc.students} alunos</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
       </div>
 
