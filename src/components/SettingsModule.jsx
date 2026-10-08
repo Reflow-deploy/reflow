@@ -6,8 +6,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Users, BookOpen, Calendar, Plus, Search, Edit3, Trash2, Clock, Mail, Phone, Check, MapPin, BookMarked, AlertCircle, Cpu, LayoutGrid, ShieldCheck, Hourglass, Link2 } from 'lucide-react';
-import { getRealTimeStatus, nowInMinutes, timeToMinutes, todayDateString } from '../utils/spaceStatus';
+import { Calendar, Plus, Search, Edit3, Trash2, Clock, Mail, Phone, AlertCircle, ShieldCheck, Hourglass, Link2 } from 'lucide-react';
+import { nowInMinutes, timeToMinutes, todayDateString } from '../utils/spaceStatus';
 import { ROLES } from '../utils/permissions';
 import ModalEditSpace from './modals/ModalEditSpace';
 import AdminAuditView from './AdminAuditView';
@@ -37,7 +37,6 @@ function weekdayNameFromDateStr(dateStr) {
 export default function SettingsModule({
   collaborators,
   classes,
-  weeklySchedule,
   onOpenAddCollaborator,
   onOpenAddClass,
   onDeleteCollaborator,
@@ -77,12 +76,10 @@ export default function SettingsModule({
     whiteSpace: 'nowrap',
     flexShrink: 0
   });
-  const [classSubView, setClassSubView] = useState('CLASSES_LIST'); // CLASSES_LIST | WEEKLY_GRID
   const [searchCollaborator, setSearchCollaborator] = useState('');
   const [searchSpace, setSearchSpace] = useState('');
-  const [selectedBlockFilter, setSelectedBlockFilter] = useState('ALL');
+  const [selectedBlockFilter] = useState('ALL');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState('ALL');
-  const [selectedClassForWeekly, setSelectedClassForWeekly] = useState('1º Ano - Ensino Médio');
   const [spaceToEdit, setSpaceToEdit] = useState(null);
 
   // Somente Administrador ou Direção podem adicionar, editar ou excluir

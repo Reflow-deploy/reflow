@@ -36,7 +36,5 @@ export const eventService = new EventService();
 
 // Constantes de Eventos do Sistema
 export const EVENTS = {
-  OCCURRENCE_CREATED: 'OCCURRENCE_CREATED',
-  OCCURRENCE_RESOLVED: 'OCCURRENCE_RESOLVED',
-  GMAIL_CONNECTED: 'GMAIL_CONNECTED'
+  OCCURRENCE_CREATED: 'OCCURRENCE_CREATED'
 };

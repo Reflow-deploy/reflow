@@ -7,14 +7,13 @@
  */
 
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
-import { DEFAULT_SPACES, DEFAULT_COLLABORATORS, DEFAULT_CLASSES } from './defaultData';
 import { todayDateString } from '../utils/spaceStatus';
 
 // -------------------------------------------------------------
 // MAPEAMENTO DE LINHAS DO BANCO (snake_case) -> FORMATO DO APP (camelCase)
 // -------------------------------------------------------------
 // Extraídas como funções isoladas e exportadas porque são usadas tanto por
-// loadInitialData() (carga única no mount) quanto pelo realtimeService (que
+// reloadAllData() (carga única no mount) quanto pelo realtimeService (que
 // recebe as mesmas linhas via Supabase Realtime e precisa converter do
 // mesmo jeito pra fundir no estado local sem duplicar a lógica).
 
@@ -136,113 +135,11 @@ export function mapClassRow(cl) {
 }
 
 /**
- * Carrega os dados iniciais do Supabase ou usa os dados padrão (fallback) caso o banco esteja vazio ou inacessível.
- */
-export async function loadInitialData() {
-  if (!isSupabaseConfigured()) {
-    console.warn('[Reflow] Supabase não configurado. Utilizando dados padrão locais.');
-    return {
-      spaces: DEFAULT_SPACES,
-      collaborators: DEFAULT_COLLABORATORS,
-      classes: DEFAULT_CLASSES,
-      occurrences: [],
-      auditLogs: [],
-      allocations: []
-    };
-  }
-
-  try {
-    // 1. Carrega Espaços & Alocações
-    const { data: dbSpaces, error: spacesErr } = await supabase.from('spaces').select('*');
-    const { data: dbAllocations } = await supabase.from('allocations').select('*');
-
-    // Mapeamento único de allocations — reaproveitado tanto pela lista flat
-    // (usada pelo Dashboard/Analytics) quanto pelo scheduleToday embutido em
-    // cada sala (formato já existente, mantido intacto abaixo).
-    const allocationsFlat = (dbAllocations || []).map(mapAllocationRow);
-
-    let spacesList = [];
-
-    if (!spacesErr && dbSpaces && dbSpaces.length > 0) {
-      spacesList = dbSpaces.map(sp => {
-        const spaceAllocations = allocationsFlat
-          .filter(a => a.spaceId === String(sp.id))
-          .map(allocationToScheduleEntry);
-
-        return {
-          ...mapSpaceRow(sp),
-          scheduleToday: spaceAllocations
-        };
-      });
-    } else {
-      // Fallback para salas padrão e sementeia no Supabase em segundo plano
-      spacesList = DEFAULT_SPACES;
-    }
-
-    // 2. Ocorrências
-    const { data: dbOccurrences } = await supabase.from('occurrences').select('*');
-    let occurrencesList = [];
-
-    if (dbOccurrences && dbOccurrences.length > 0) {
-      occurrencesList = dbOccurrences.map(mapOccurrenceRow);
-    }
-
-    // 3. Auditoria de E-mails
-    const { data: dbAudit } = await supabase.from('audit_logs').select('*');
-    let auditLogsList = [];
-
-    if (dbAudit && dbAudit.length > 0) {
-      auditLogsList = dbAudit.map(mapAuditLogRow);
-    }
-
-    // 4. Colaboradores
-    const { data: dbCollaborators, error: colErr } = await supabase.from('collaborators').select('*');
-    let collaboratorsList = [];
-
-    if (!colErr && dbCollaborators && dbCollaborators.length > 0) {
-      collaboratorsList = dbCollaborators.map(mapCollaboratorRow);
-    } else {
-      collaboratorsList = DEFAULT_COLLABORATORS;
-    }
-
-    // 5. Turmas
-    const { data: dbClasses, error: classErr } = await supabase.from('classes').select('*');
-    let classesList = [];
-
-    if (!classErr && dbClasses && dbClasses.length > 0) {
-      classesList = dbClasses.map(mapClassRow);
-    } else {
-      classesList = DEFAULT_CLASSES;
-    }
-
-    return {
-      spaces: spacesList,
-      collaborators: collaboratorsList,
-      classes: classesList,
-      occurrences: occurrencesList,
-      auditLogs: auditLogsList,
-      allocations: allocationsFlat
-    };
-
-  } catch (err) {
-    console.error('[Reflow] Erro ao carregar dados do Supabase:', err);
-    return {
-      spaces: DEFAULT_SPACES,
-      collaborators: DEFAULT_COLLABORATORS,
-      classes: DEFAULT_CLASSES,
-      occurrences: [],
-      auditLogs: [],
-      allocations: []
-    };
-  }
-}
-
-/**
  * Recarrega TODOS os dados do banco de forma "segura", pra ressincronizar a
  * tela depois de uma queda do Realtime, de a aba ter ficado em segundo plano
  * ou de a internet voltar.
  *
- * Diferente de loadInitialData(), NUNCA cai em dados padrão nem semeia o
+ * Em caso de erro, NUNCA cai em dados padrão nem semeia o
  * banco: qualquer erro devolve null e o chamador simplesmente mantém o que
  * já está na tela. Sem essa cautela, uma falha de rede momentânea trocaria os
  * dados reais pelos de exemplo.
@@ -284,61 +181,6 @@ export async function reloadAllData() {
   } catch (err) {
     console.warn('[Reflow] Não foi possível ressincronizar os dados:', err);
     return null;
-  }
-}
-
-// -------------------------------------------------------------
-// SEMENTES AUTOMÁTICAS (Caso o banco de dados esteja limpo)
-// -------------------------------------------------------------
-async function seedSpacesIfEmpty() {
-  try {
-    const spacesToInsert = DEFAULT_SPACES.map(sp => ({
-      id: sp.id,
-      name: sp.name,
-      type: sp.type,
-      capacity: sp.capacity,
-      block: sp.block,
-      status: sp.status,
-      svg_group_id: sp.svgGroupId
-    }));
-    await supabase.from('spaces').upsert(spacesToInsert);
-  } catch (e) {
-    console.warn('[Reflow] Aviso ao popular tabela spaces:', e);
-  }
-}
-
-async function seedCollaboratorsIfEmpty() {
-  try {
-    const colToInsert = DEFAULT_COLLABORATORS.map(c => ({
-      id: c.id,
-      initials: c.initials,
-      name: c.name,
-      status: c.status,
-      category: c.category,
-      role: c.role,
-      email: c.email,
-      phone: c.phone,
-      start_time: c.startTime,
-      end_time: c.endTime,
-      work_days: c.workDays,
-      notes: c.notes
-    }));
-    await supabase.from('collaborators').upsert(colToInsert);
-  } catch (e) {
-    console.warn('[Reflow] Aviso ao popular tabela collaborators:', e);
-  }
-}
-
-async function seedClassesIfEmpty() {
-  try {
-    const classesToInsert = DEFAULT_CLASSES.map(cl => ({
-      id: cl.id,
-      name: cl.name,
-      students_count: cl.studentsCount
-    }));
-    await supabase.from('classes').upsert(classesToInsert);
-  } catch (e) {
-    console.warn('[Reflow] Aviso ao popular tabela classes:', e);
   }
 }
 

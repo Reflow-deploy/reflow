@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { AlertTriangle, Siren } from 'lucide-react';
+import { Siren } from 'lucide-react';
 import { useIsMobile } from '../utils/useIsMobile';
 
 export default function FABAlert({ onClick }) {

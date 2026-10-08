@@ -18,12 +18,12 @@ import {
 /**
  * realtimeService.js — Sincronização em Tempo Real (Supabase Realtime)
  *
- * loadInitialData() só roda uma vez, no mount de App.jsx — sem isso, uma
+ * A carga inicial (reloadAllData) roda no mount de App.jsx — sem isso, uma
  * alocação/ocorrência/edição feita por um usuário nunca aparece pra outro
  * usuário já com a página aberta; ele só vê a mudança dando F5 (o que
- * dispara um novo mount e um novo loadInitialData). Este módulo assina os
+ * dispara um novo mount e uma nova carga inicial). Este módulo assina os
  * eventos de postgres_changes do Supabase Realtime nas mesmas tabelas
- * carregadas por loadInitialData, para que INSERT/UPDATE/DELETE feitos por
+ * carregadas na carga inicial, para que INSERT/UPDATE/DELETE feitos por
  * qualquer usuário sejam propagados a todos os clientes conectados.
  *
  * A autorização de quais linhas cada cliente recebe continua sendo feita

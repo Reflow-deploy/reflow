@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Calendar, Clock, Users, AlertTriangle, Check, Repeat } from 'lucide-react';
+import { X, Calendar, Clock, AlertTriangle, Check, Repeat } from 'lucide-react';
 import { useIsMobile } from '../../utils/useIsMobile';
 import { todayDateString } from '../../utils/spaceStatus';
 

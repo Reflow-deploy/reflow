@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { AlertTriangle, Mail, Trash2, CheckCircle2, Clock, ShieldAlert, Send, RefreshCw, RotateCcw, X, ChevronLeft } from 'lucide-react';
+import { Mail, Trash2, CheckCircle2, RefreshCw, RotateCcw, X, ChevronLeft } from 'lucide-react';
 import { ROLES } from '../utils/permissions';
 import { useIsMobile } from '../utils/useIsMobile';
 

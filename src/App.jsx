@@ -28,7 +28,6 @@ import ModalSeriesResult from './components/modals/ModalSeriesResult';
 
 import { getRealTimeStatus, todayDateString, timeToMinutes, nowInMinutes, nowTimeString } from './utils/spaceStatus';
 import {
-  loadInitialData,
   dbAddAllocation,
   dbDeleteAllocation,
   dbDeleteAllocationSeries,
@@ -172,7 +171,6 @@ export default function App() {
   const [spaces, setSpaces] = useState([]);
   const [collaborators, setCollaborators] = useState([]);
   const [classes, setClasses] = useState([]);
-  const [weeklySchedule, setWeeklySchedule] = useState({});
   const [occurrences, setOccurrences] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [adminAuditLog, setAdminAuditLog] = useState([]);
@@ -227,7 +225,7 @@ export default function App() {
   // 👤 Cargo do sistema (Pendente/Professor/Direção/Equipe de Suporte/
   // Administrador) agora é só mais um campo do colaborador — unificado
   // com o cadastro de "Profissionais" (collaborators já vem carregado
-  // pelo loadInitialData, não precisa de um fetch separado).
+  // pela carga inicial (reloadAllData), não precisa de um fetch separado).
   const handleUpdateCollaboratorRole = async (colId, newRole) => {
     try {
       await dbUpdateCollaboratorSystemRole(colId, newRole);
@@ -250,7 +248,7 @@ export default function App() {
 
   // Carga inicial dos dados. ANTES rodava uma vez na montagem, ANTES do login
   // estar pronto: o banco (RLS) devolvia tudo vazio, e o código caía nos dados
-  // de exemplo do defaultData.js — nomes de turmas/salas que não existem no
+  // de exemplo (já removidos do projeto) — nomes de turmas/salas que não existem no
   // banco ("Sala de Aula 01", "1º TDS…") ficavam na tela até a primeira
   // ressincronização corrigir. Agora a carga só roda com usuário aprovado e
   // NUNCA usa dados de exemplo quando há Supabase: enquanto carrega mostra uma
@@ -273,7 +271,7 @@ export default function App() {
 
   // 📡 Sincronização em tempo real (Supabase Realtime) — sem isso, uma
   // alocação/ocorrência/edição feita por outro usuário só aparecia aqui
-  // depois de um F5, já que loadInitialData() acima só roda uma vez no
+  // depois de um F5, já que a carga inicial só roda uma vez no
   // mount. Cada handler funde o evento recebido no estado local por id
   // (upsert/remove) — por isso é seguro receber de volta o próprio evento
   // gerado por uma ação deste mesmo cliente (idempotente, sem duplicar).
@@ -320,19 +318,9 @@ export default function App() {
   const canLoadData = Boolean(realtimeUserId) && Boolean(currentUser?.role) && currentUser.role !== ROLES.PENDENTE;
 
   useEffect(() => {
-    // Sem Supabase configurado (desenvolvimento local): dados de exemplo.
-    if (!supabase) {
-      loadInitialData().then(data => {
-        setSpaces(data.spaces);
-        setCollaborators(data.collaborators);
-        setClasses(data.classes);
-        setOccurrences(data.occurrences);
-        setAuditLogs(data.auditLogs);
-        setAllocations(data.allocations);
-        setDataReady(true);
-      });
-      return;
-    }
+    // Sem Supabase configurado (variáveis do .env ausentes) o site fica na tela de
+    // login e não carrega dados.
+    if (!supabase) return;
 
     if (!canLoadData) {
       setDataReady(false); // logout / outra conta: não deixa dados do usuário anterior na tela
@@ -1041,7 +1029,7 @@ Status Atual: ABERTO`
     setOccurrences(prev => {
       // Também sincroniza resolvedAt localmente, espelhando o que a trigger
       // do banco faz — sem isso, o Dashboard só veria o novo resolved_at
-      // depois de um reload, já que loadInitialData() roda uma vez só.
+      // depois de um reload, já que a carga inicial roda uma vez só.
       const updated = prev.map(o => o.id === id
         ? { ...o, status: newStatus, resolvedAt: newStatus === 'RESOLVIDO' ? new Date().toISOString() : null }
         : o);
@@ -1393,7 +1381,6 @@ Status Atual: ABERTO`
             <SettingsModule
               collaborators={collaborators}
               classes={classes}
-              weeklySchedule={weeklySchedule}
               onOpenAddCollaborator={() => { setCollaboratorToEdit(null); setShowAddCollaboratorModal(true); }}
               onOpenAddClass={() => { setClassToEdit(null); setShowAddClassModal(true); }}
               onDeleteCollaborator={handleDeleteCollaborator}

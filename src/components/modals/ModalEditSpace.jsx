@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { X, Save, Building, Users, Check, AlertCircle } from 'lucide-react';
+import { X, Save, Check, AlertCircle } from 'lucide-react';
 import { useIsMobile } from '../../utils/useIsMobile';
 
 const AVAILABLE_EQUIPMENTS = [

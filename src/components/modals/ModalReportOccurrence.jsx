@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { X, Siren, Mail, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Siren, Mail, Send, AlertCircle } from 'lucide-react';
 import { ROLES } from '../../utils/permissions';
 import { useIsMobile } from '../../utils/useIsMobile';
 

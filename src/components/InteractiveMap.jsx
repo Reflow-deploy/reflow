@@ -6,10 +6,9 @@
  */
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { Calendar, Search, X, Sparkles, Filter, Clock, RotateCcw } from 'lucide-react';
+import { Calendar, X, Sparkles, Filter, Clock, RotateCcw } from 'lucide-react';
 import SchoolMap from './SchoolMap';
 import { useIsMobile } from '../utils/useIsMobile';
-import { todayDateString } from '../utils/spaceStatus';
 
 // Reformatação pura de "YYYY-MM-DD" -> "DD/MM/YYYY" (mesmo helper de
 // App.jsx, replicado aqui — pequena duplicação já aceita no projeto pra

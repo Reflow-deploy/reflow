@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { Map, Calendar, AlertTriangle, BarChart3, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { Map, AlertTriangle, BarChart3, Settings, LogOut, ChevronDown } from 'lucide-react';
 import ModalProfile from './modals/ModalProfile';
 import { getAllowedTabs } from '../utils/permissions';
 import { useIsMobile } from '../utils/useIsMobile';
